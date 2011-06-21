@@ -1,0 +1,4 @@
+create_key_by_sql
+select * from (select 1,* from emp where not mgr is null)
+quit
+

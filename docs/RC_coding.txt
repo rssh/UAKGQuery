@@ -1,0 +1,77 @@
+
+RCStream:: Version, RecordArray
+
+Version:: 0x01
+
+RecordArray :: NumberOfRecords[4],  RecordHeader , RecordData<1..infinity> ;
+
+Record :: RecordHeader,RecordData;
+
+RecordHeader :: NumberOfFields[1];
+
+RecordData :: FieldBlock<NumberOfFields> ;
+
+FieldBlock ::  DataType , DataValue;
+
+DataType ::
+ 	       TypeNull	     0x00
+	|      TypeBoolean   0x01
+	|      TypeChar      0x02
+	|      TypeOctet     0x03
+	|      TypeShort     0x04
+	|      TypeUShort    0x05
+	|      TypeLong      0x06
+	|      TypeULong     0x07
+	|      TypeFloat     0x08
+	|      TypeDouble     0x09
+	|      TypeString     0x0A
+	|      TypeObject     0x0B
+	|      TypeAny        0x0C
+	|      TypeSmallInt   0x0D
+	|      TypeInteger    0x0E
+	|      TypeDecimal    0x0F
+	|      TypeNumeric    0x10
+	|      TypeRaw        0x11
+	|      TypeLongRaw    0x12
+        |      TypeLongString 0x13
+        |      TypeWStrint    0x14
+        |      TypeDateTime   0x15
+    ;	
+
+DataValue  :: 
+               ValueNull[0],
+	|      ValueBoolean[1] 
+	|      ValueChar[1]
+	|      ValueWchar[2]
+	|      ValueShort[2] // network order
+	|      ValueUShort[2] // network order
+	|      ValueLong[4] // network order
+	|      ValueULong[4] // network order
+	|      ValueFloat[4]     // network order
+	|      ValueDouble[8]    // network order
+	|      ValueString  
+	|      ValueOctets    
+	|      ValueWString
+	|      ValueOctet[1]
+        |      ValueDecimal
+        |      ValueAny 
+        |      ValueObject
+        |      ValueDateTime
+    ;
+
+ValueDecimal:: ValueLong, ValueLong, ValueRaw
+          // precision, scale, value
+
+ValueDateTime:: ValueShort, ValueOctet, ValueOctet, ValueOctet, ValueOctet, ValueOctet
+        //        year    ,   month   ,   day     ,   hour    ,  minute   , second
+
+ValueString :: Length[4] //network order ,ValueChar<Length> ;
+
+ValueWString :: Length[4] //network order ,ValueWChar<Length> ;
+
+ValueOctets :: Length[4] //network order ,ValueOctet<Length> ;
+ 
+ValueAny :: Length[4], TypeCode id as String, value as OctetSeq
+                
+ValueObject :: Length[4], GIOP ObjectReference
+

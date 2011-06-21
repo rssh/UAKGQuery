@@ -1,0 +1,464 @@
+#!/bin/sh
+#
+# idl_depend.
+# Tool for generating dependences from idl
+# (C) Ruslan Shevchenko <Ruslan@Shevchenko.Kiev.UA>, 1998 - 2009
+#
+###########################################################
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#   notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#   notice, this list of conditions and the following disclaimer in the
+#   documentation and/or other materials provided with the distribution.
+# 3. All advertising materials mentioning features or use of this software
+#   must display the following acknowledgement:
+#      This product includes software developed by Ruslan Shevchenko, 
+#      Ukraine, Kiev and his contributors.
+# 4. Neither the name of the original author nor the names of his contributors
+#    may be used to endorse or promote products derived from this software
+#    without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+###########################################################
+
+usage()
+{
+ echo "idl_depend, "
+ echo "Usage: idl_depend [options]"
+ echo " where options:"
+ echo "     --idl_dir directory_where_you_store_idl_files"
+ echo "     --idl_file file_to_process"
+ echo "     --extra_idl_flag flags_which_you_want_pass_to_idl "
+ echo "     --var_prefix prefix_of_make_varibales"
+ echo "     --h_dir directory_where_generated_header_files_must_be"
+ echo "     --cpp_dir directory_where_generated_cpp_files_must_be"
+ echo "     --obj_dir directory_where_generated_object_files_must_be"
+ echo "     --cln_h_suffix suffix for generated client headers (default: .h)"
+ echo "     --cln_h1_suffix suffix for second generated client headers "
+ echo "                                                     (default: no)"
+ echo "     --cln_cpp_suffix suffix for generated client cpp (default: .cpp)"
+ echo "     --cln_obj_suffix suffix for generated client objs (default: .o)"
+ echo "     --srv_h_suffix suffix for generated skeleton headers (default: _skel.h)"
+ echo "     --srv_h1_suffix suffix for second generated skeleton headers "
+ echo "                                                (default: no.h)"
+ echo "     --srv_cpp_suffix suffix for generated skeleton cxx sources "
+ echo "                                               (default: _skel.cpp)"
+ echo "     --srv_cpp_suffix suffix for generated skeleton object files  "
+ echo "                                               (default: _skel.o)"
+ echo "     --tie_h_suffix suffix for generated tie skeleton headers   "
+ echo "                                               (default: _skel_tie.h)"
+ echo "     --tie_h1_suffix second suffix for generated tie skeleton headers   "
+ echo "                                               (default: no)"
+ echo "     --tie_cpp_suffix suffix for generated tie skeleton sources  "
+ echo "                                               (default: no)"
+ echo "     --absolute-path : use absolute patch names"
+ echo "     --additive-vars : do not set make variables to empty initial variable"
+ echo "     --version : show version"
+ echo "     --verbose : show debug information in stderr"
+ echo "     --cxxcompile : use \$(CXXCOMPILE) instead \$(CXX) \$(CXXFLAGS)"
+ echo "     --sgi-make : do not use += in generated Makefile "
+}
+
+IDL_DIR=
+IDLS=
+VAR_PREFIX=
+H_DIR=
+EXTRA_IDLFLAGS=
+CLN_H_SUFFIX=.h
+CLN_H_BEFREDOT_SUFFIX=
+CLN_H_EXT=h
+CLN_H1_SUFFIX=.h
+CLN_CPP_SUFFIX=.cpp
+CLN_OBJ_SUFFIX=.o
+SRV_H_SUFFIX=_skel.h
+SRV_H1_SUFFIX=_skel.h
+SRV_CPP_SUFFIX=_skel.cpp
+SRV_OBJ_SUFFIX=_skel.o
+TIE_H_SUFFIX=_skel_tie.h
+TIE_H1_SUFFIX=no
+TIE_CPP_SUFFIX=no
+
+while [ "x$*" != "x" ]
+do
+   case $1 in
+     --idl_dir|--idl-dir)
+		IDL_DIR=$2
+		shift
+		;;
+     --extra-idl-flags|--extra_idl_flags|--extra-idl-flag|--extra_idl_flag)
+                EXTRA_IDLFLAGS="$EXTRA_IDLFLAGS $2"
+                shift
+                ;;
+     --idl_file|--idl-file)
+                IDLS="$IDLS $2"
+		shift
+                ;;
+     --var_prefix|--var-prefix)
+		VAR_PREFIX=$2
+                shift
+                ;;
+     --h_dir|--h-dir)
+                H_DIR=$2;
+                shift
+                ;;
+     --cpp_dir|--cpp-dir)
+                CPP_DIR=$2;
+                shift
+                ;;
+     --obj_dir|--obj-dir)
+                OBJ_DIR=$2;
+                shift
+                ;;
+     --cln_h_suffix|--cln-h-suffix)
+                CLN_H_SUFFIX=$2
+                shift
+                ;;
+     --cln_h1_suffix|--cln-h1-suffix)
+                CLN_H1_SUFFIX=$2
+                shift
+                ;;
+     --cln_cpp_suffix|--cln-cpp-suffix)
+                CLN_CPP_SUFFIX=$2
+                shift
+                ;;
+     --cln_obj_suffix|--cln-obj-suffix)
+                CLN_OBJ_SUFFIX=$2
+                shift
+                ;;
+     --srv_h_suffix|--srv-h-suffix)
+                SRV_H_SUFFIX=$2
+                shift
+                ;;
+     --srv_h1_suffix|--srv-h1-suffix)
+                SRV_H1_SUFFIX=$2
+                shift
+                ;;
+     --srv_cpp_suffix|--srv-cpp-suffix)
+                SRV_CPP_SUFFIX=$2
+                shift
+                ;;
+     --srv_obj_suffix|--srv-obj-suffix)
+                SRV_OBJ_SUFFIX=$2
+                shift
+                ;;
+     --tie_h_suffix|--tie-h-suffix)
+                TIE_H_SUFFIX=$2
+                shift
+                ;;
+     --tie_h1_suffix|--tie-h1-suffix)
+                TIE_H1_SUFFIX=$2
+                shift
+                ;;
+     --tie_cpp_suffix|--tie-cpp-suffix)
+                TIE_CPP_SUFFIX=$2
+                shift
+                ;;
+     --absolute_path|--absolute-path)
+                ABSOLUTE=1
+                ;;
+     --additive_vars|--additive-vars)
+                ADDITIVE_VARS=1
+                ;;
+     --cxxcompile)
+		CXXCOMPILE=1
+		;;
+     --sgi-make|--sgi_make)
+		SGI_MAKE=1
+		;;
+     --verbose)
+	        VERBOSE=yes
+                ;;
+     --version)
+	echo "idl_depend: makefile generator for idl -> C++ transformation"
+	echo "(C) Ruslan Shevchenko <Ruslan@Shevchenko.Kiev.UA>, 1998,1999,2000"
+        echo $Id: idl_depend,v 1.4 2007-02-16 04:45:32 rssh Exp $x
+		exit
+		;;
+     --*)
+                usage
+                exit
+                ;;
+   esac
+   shift
+done
+
+
+if [ "x$IDLS" = "x" ]
+then
+  if [ "x$IDL_DIR" = "x" ]
+  then
+    IDLS="*.idl"
+  else
+    IDLS="$IDL_DIR/*.idl"
+  fi
+fi
+
+
+if [ "x$SGI_MAKE" = "x" ]
+then
+  if [ "x$ADDITIVE_VARS" = "x" ]
+  then
+    echo IDL_${VAR_PREFIX}ALL=
+  fi
+else
+  if [ "x$ADDITIVE_VARS" = "x" ]
+  then
+    idl_all_var= 
+    idl_cl_all_objs_var=
+    idl_skel_all_objs_var= 
+    idl_srv_all_objs_var=
+  else
+    echo "options --additive-vars and --sgi-make are incompatible" 1>&2 
+    exit 1 
+  fi
+fi
+
+if test "x$VERBOSE" = "xyes"; then
+ echo IDL_DIR=$IDL_DIR                >& 2
+ echo IDLS=$IDLS                      >& 2
+ echo VAR_PREFIX=$VAR_PREFIX          >& 2
+ echo H_DIR=$H_DIR                    >& 2
+ echo EXTRA_IDLFLAGS=$EXTRA_IDLFLAGS  >& 2
+ echo CLN_H_SUFFIX=$CLN_H_SUFFIX      >& 2
+ echo CLN_H1_SUFFIX=$CLN_H1_SUFFIX    >& 2
+ echo CLN_CPP_SUFFIX=$CLN_CPP_SUFFIX  >& 2
+ echo CLN_OBJ_SUFFIX=$CLN_OBJ_SUFFIX  >& 2
+ echo SRV_H_SUFFIX=$SRV_H_SUFFIX      >& 2
+ echo SRV_H1_SUFFIX=$SRV_H1_SUFFIX    >& 2
+ echo SRV_CPP_SUFFIX=$SRV_CPP_SUFFIX  >& 2
+ echo SRV_OBJ_SUFFIX=$SRV_OBJ_SUFFIX  >& 2
+ echo TIE_H_SUFFIX=$TIE_H_SUFFIX      >& 2
+ echo TIE_H1_SUFFIX=$TIE_H1_SUFFIX    >& 2
+ echo TIE_CPP_SUFFIX=$TIE_CPP_SUFFIX  >& 2
+fi
+
+
+for i in $IDLS
+do
+  TESTEMPTY=`echo $i | sed '/\*/d'`
+  if [ "x$TESTEMPTY" = "x" ]
+  then
+    echo no idl files found.
+    exit
+  fi
+
+
+  j=`basename $i .idl`
+  if [ "x$H_DIR" = "x" ]
+  then
+    CL_H=${j}${CLN_H_SUFFIX}
+    CL_H1=${j}${CLN_H1_SUFFIX}
+    SKEL_H=${j}${SRV_H_SUFFIX}
+    SKEL_H1=${j}${SRV_H1_SUFFIX}
+    TIE_H=${j}${TIE_H_SUFFIX}
+    TIE_H1=${j}${TIE_H1_SUFFIX}
+  else
+    CL_H="${H_DIR}/${j}${CLN_H_SUFFIX}"
+    CL_H1="${H_DIR}/${j}${CLN_H1_SUFFIX}"
+    SKEL_H="${H_DIR}/${j}${SRV_H_SUFFIX}"
+    SKEL_H1="${H_DIR}/${j}${SRV_H1_SUFFIX}"
+    TIE_H="${H_DIR}/${j}${TIE_H_SUFFIX}"
+    TIE_H1="${H_DIR}/${j}${TIE_H1_SUFFIX}"
+  fi
+
+
+  if [ "x$CPP_DIR" = "x" ]
+  then
+    CL_CPP=$j${CLN_CPP_SUFFIX}
+    SKEL_CPP=${j}${SRV_CPP_SUFFIX}
+    TIE_CPP=${j}${TIE_CPP_SUFFIX}
+  else
+    CL_CPP=${CPP_DIR}/$j${CLN_CPP_SUFFIX}
+    SKEL_CPP=${CPP_DIR}/${j}${SRV_CPP_SUFFIX}
+    TIE_CPP=${CPP_DIR}/${j}${TIE_CPP_SUFFIX}
+  fi
+
+
+  if [ "x$OBJ_DIR" = "x" ]
+  then
+    CL_OBJ=$j${CLN_OBJ_SUFFIX}
+    SKEL_OBJ=${j}${SRV_OBJ_SUFFIX}
+  else
+    CL_OBJ=${OBJ_DIR}/$j$CLN_OBJ_SUFFIX
+    SKEL_OBJ=${OBJ_DIR}/${j}${SRV_OBJ_SUFFIX}
+  fi
+
+
+  CUR_IDL=$i
+
+  if [ "x$ABSOLUTE" != "x" ]
+  then
+   case $CL_H in
+     /*)
+        ;;
+      *)
+        CL_H=`pwd`/$CL_H
+        CL_H1=`pwd`/$CL_H1
+        SKEL_H=`pwd`/$SKEL_H
+        SKEL_H1=`pwd`/$SKE_H1
+        TIE_H=`pwd`/$TIE_H
+        TIE_H1=`pwd`/$TIE_H
+        ;;
+   esac
+   case $CL_CPP in
+     /*)
+        ;;
+      *)
+        CL_CPP=`pwd`/$CL_CPP
+        SKEL_CPP=`pwd`/$SKEL_CPP
+        TIE_CPP=`pwd`/$TIE_CPP
+        ;;
+    esac
+    case $CL_OBJ in
+      /*)
+         ;;
+       *)
+         CL_OBJ=`pwd`/$CL_OBJ
+         SKEL_OBJ=`pwd`/$SKEL_OBJ
+         ;;
+    esac 
+    case $CUR_IDL in
+      /*)
+         ;;
+       *)
+         CUR_IDL=`pwd`/$CUR_IDL
+         ;;
+    esac
+  fi
+
+  if test "x$CL_H" = "x$SKEL_H" ; then
+    TARGET="$CL_H"
+  else
+    TARGET="$CL_H $SKEL_H"
+  fi
+
+
+  if test "x$CL_CPP" = "x$SKEL_CPP" ; then
+    TARGET="$TARGET $CL_CPP"
+  else
+    TARGET="$TARGET $CL_CPP $SKEL_CPP"
+  fi
+
+  echo "$TARGET: $CUR_IDL"
+  echo "	(BP=\`dirname \$(IDL2CXX)\`;\\"
+  echo "	LP=\$\$BP/../lib;\\"
+  echo "	PATH=\$\$BP:\$\$PATH;\\"
+  echo "	LD_LIBRARY_PATH=\$\$LP:\$\$LD_LIBRARY_PATH;\\"
+  echo "	export LD_LIBRARY_PATH; export PATH;\\"
+  echo "	\$(IDL2CXX) \$(IDLFLAGS) $EXTRA_IDLFLAGS   $CUR_IDL;\\"
+  echo ")"
+
+
+  if [ "x$H_DIR" != "x" ]
+  then
+    LOC_CLN_H=$j${CLN_H_SUFFIX}
+    LOC_CLN_H1=$j${CLN_H1_SUFFIX}
+    LOC_SRV_H=$j${SRV_H_SUFFIX}
+    LOC_SRV_H1=$j${SRV_H1_SUFFIX}
+    LOC_TIE_H=$j${TIE_H_SUFFIX}
+    LOC_TIE_H1=$j${TIE_H1_SUFFIX}
+    echo "	mv $LOC_CLN_H  $CL_H"
+    if test "x$CLN_H1_SUFFIX" != "xno" ; then
+       echo "CLN_H1_SUFFIX:	mv $LOC_CLN_H1  $CL_H1" >& 2
+       echo "	mv $LOC_CLN_H1  $CL_H1"
+    fi
+    if test  "x$SRV_H_SUFFIX" != "xno" ; then
+     if test ! "x$SRV_H_SUFFIX" = "x$CLN_H_SUFFIX" ; then
+       echo "	mv ${j}${SRV_H_SUFFIX} $SKEL_H"
+     fi
+    fi
+    if test  "x$SRV_H1_SUFFIX" != "xno" ; then
+       echo "SRV_H1_SUFFIX	mv $LOC_SRV_H1 $SKEL_H1" >& 2
+       echo "	mv $LOC_SRV_H1 $SKEL_H1"
+    fi
+    if test  "x$TIE_H_SUFFIX" != "xno" ; then
+      echo "	if [ -f ${LOC_TIE_H} ]; then mv ${LOC_TIE_H} $TIE_H; fi"
+    fi
+    if test  "x$TIE_H1_SUFFIX" != "xno" ; then
+      echo "	if [ -f ${LOC_TIE_H1} ]; then mv ${LOC_TIE_H1} $TIE_H1; fi"
+    fi
+  fi
+  if [ "x$CPP_DIR" != "x" ]
+  then
+    LOC_CLN_CPP=$j${CLN_CPP_SUFFIX}
+    LOC_SRV_CPP=$j${SRV_CPP_SUFFIX}
+    LOC_TIE_CPP=$j${TIE_CPP_SUFFIX}
+    echo "	mv $LOC_CLN_CPP $CL_CPP"
+    if test  "x$SRV_CPP_SUFFIX" != "xno"; then
+     if test  "x$SRV_CPP_SUFFIX" != "x$CLN_CPP_SUFFIX"; then
+      echo "	mv ${j}${SRV_CPP_SUFFIX} $SKEL_CPP"
+     fi
+    fi
+    if test ! "x$TIE_CPP_SUFFIX" = "xno"; then
+      echo "	if [ -f ${LOC_TIE_CPP} ]; then mv ${LOC_TIE_CPP} $TIE_CPP; fi"
+    fi
+  fi
+  echo
+  if [ "x$SGI_MAKE" != "x" ]
+  then
+    idl_all_var="$idl_all_var $CL_H"
+    idl_cl_all_objs_var="$idl_cl_all_objs_var $CL_OBJ"
+    idl_skel_all_objs_var="$idl_skel_all_objs_var $SKEL_OBJ"
+    if test "x$SKEL_OBJ" = "x$CL_OBJ"
+    then
+       idl_srv_all_objs_var="$idl_srv_all_objs_var $SKEL_OBJ"
+    else
+       idl_srv_all_objs_var="$idl_srv_all_objs_var $SKEL_OBJ $CL_OBJ"
+    fi
+  else
+    echo IDL_${VAR_PREFIX}ALL += $CL_H 
+    echo IDL_CL_${VAR_PREFIX}ALL_OBJS += $CL_OBJ
+    echo IDL_SKEL_${VAR_PREFIX}ALL_OBJS += $SKEL_OBJ
+    if test "x$SKEL_OBJ" = "x$CL_OBJ"
+    then
+      echo IDL_SRV_${VAR_PREFIX}ALL_OBJS += $SKEL_OBJ 
+    else
+      echo IDL_SRV_${VAR_PREFIX}ALL_OBJS += $SKEL_OBJ $CL_OBJ
+    fi
+  fi
+  echo
+  echo  IDL_${VAR_PREFIX}`echo $j | tr [:lower:] [:upper:]`_CL_OBJS=$CL_OBJ
+  echo  IDL_${VAR_PREFIX}`echo $j | tr [:lower:] [:upper:]`_SKEL_OBJS=$SKEL_OBJ
+  echo  IDL_${VAR_PREFIX}`echo $j | tr [:lower:] [:upper:]`_SRV_OBJS=$CL_OBJ $SKEL_OBJ
+  echo
+  echo  "$CL_OBJ: $CL_CPP"
+  if test "x$CXXCOMPILE" = x
+  then
+    echo  "	\$(CXX) -c \$(CXXFLAGS) \$(IDLCXXFLAGS) -o $CL_OBJ $CL_CPP"
+  else
+    echo  "	\$(CXXCOMPILE) -c -o $CL_OBJ $CL_CPP"
+  fi
+  if test ! "x$SKEL_OBJ" = "x$CL_OBJ"; then
+    echo  "$SKEL_OBJ: $SKEL_CPP"
+    if test "x$CXXCOMPILE" = "x"
+    then
+      echo  "	\$(CXX) -c \$(CXXFLAGS) \$(IDLCXXFLAGS) -o $SKEL_OBJ $SKEL_CPP"
+    else
+      echo  "	\$(CXXCOMPILE) -c -o $SKEL_OBJ $SKEL_CPP"
+    fi
+  fi
+  echo
+done
+
+if [ "x$SGI_MAKE" != "x" ]
+then
+  echo IDL_${VAR_PREFIX}ALL = $idl_all_var 
+  echo IDL_CL_${VAR_PREFIX}ALL_OBJS = $idl_cl_all_objs_var
+  echo IDL_SKEL_${VAR_PREFIX}ALL_OBJS = $idl_skel_all_objs_var 
+  echo IDL_SRV_${VAR_PREFIX}ALL_OBJS = $idl_srv_all_objs_var
+fi
+
+

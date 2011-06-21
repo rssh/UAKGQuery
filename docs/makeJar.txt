@@ -1,0 +1,10 @@
+
+1. from_idl.bat - generating java source code from idl stored in CosQuery.1\idl
+ In jlib\from_idl.bat OOC_IDL_PATH and OB_IDL_PATH according to the valid ooc 
+and ob path.
+2. make.bat
+  Set list of directories wich contain java source code to compile 
+(generated from idl and RCReader)
+3. makeJar.bat
+ Just run. You have to correct jar input list of directories in case of new one
+has appeared.

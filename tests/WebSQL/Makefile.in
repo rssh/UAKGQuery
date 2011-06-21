@@ -1,0 +1,45 @@
+# General make definitions and rules.
+#
+# part of grad Cos* build system
+#
+# (C) Alik Rivkind <alik@Grad.Kiev.UA>, 2000
+# (C) Ruslan Shevchenko <Ruslan@Shevchenko.Kiev.UA>, 2000
+# $Id: Makefile.in,v 1.1 2003-04-18 14:40:05 jos Exp $
+#
+project_root=@project_root@
+
+CXX=@CXX@
+CPPFLAGS=-I$(project_root)/include -I$(project_root)/../../include -I$(project_root)/../../src -I$(project_root)/src -I$(project_root)/../../generated @CPPFLAGS@ -I.
+CXXFLAGS=$(CPPFLAGS) @DEFS@ @CXXFLAGS@
+INCLUDE=@INCLUDE@
+CXXCOMPILE=@CXX@ $(CXXFLAGS)
+
+LD=@LD@
+LDFLAG=@LDFLAGS@
+LIBS=-L../../src -lUAKGQuery2Client @LIBS@ -lclcbroker
+
+AR=@AR@
+ARFLAGS=@ARFLAGS@
+
+CXXLIBPREPARE=@CXXLIBPREPARE@
+
+WEBSQL=WebSQL
+WEBSQL_OBJS=WebSQL.o
+
+
+default:$(WEBSQL)
+
+all:$(WEBSQL)
+
+WebSQL: $(WEBSQL_OBJS)
+	$(CXX) $(CXXFLAGS) -o WebSQL $(WEBSQL_OBJS) $(LIBS) 
+
+WebSQL.o: WebSQL.cpp
+	$(CXX) $(CXXFLAGS) -c WebSQL.cpp
+
+build: default
+
+clean:
+	-rm -f *.o
+	-rm -rf Templates.DB
+

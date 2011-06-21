@@ -1,0 +1,20 @@
+
+@SET_MAKE@
+
+SUBDIRS=steps SQLTool DBFReader 
+# TODO: add other
+
+build:
+	for i in $(SUBDIRS); do (cd $$i; $(MAKE) ); done
+
+clean:
+	for i in $(SUBDIRS); do (cd $$i; $(MAKE) clean ); done
+
+obj-clean: clean
+
+build-client-stub-library: build
+install-client-stub-library: 
+install:
+uninstall:
+uninstall-client:
+

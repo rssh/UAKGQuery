@@ -1,0 +1,59 @@
+# COS/CosQuery/idl/Makefile.in 
+#
+# part of CosQuery implementation
+# (C) Ruslan Shevchenko <Ruslan@Shevchenko.Kiev.UA>, 1998
+# $Id: Makefile.in,v 1.10 2002-08-22 16:58:25 rssh Exp $
+#
+
+PROJECT_ROOT=@PROJECT_ROOT@
+include $(PROJECT_ROOT)/config/entry.mak
+
+@SET_MAKE@
+
+SUBDIRS=""
+
+install_IDLS=UAKGQuery2.idl 
+
+CLEANFILES=*.h *.cpp
+
+all: all-recursive all-local
+
+build:
+
+build-client-stub-library: client-stub-library
+
+client-stub-library: all-local
+
+all-local: $(CosQuery_INCLUDES)
+
+install: install-local 
+
+install-client-stub-library: install
+
+clean: 
+	for i in $(SUBDIRS); do \
+	 (cd $$i; $(MAKE) clean); \
+	done
+
+obj-clean:
+	-echo nothing
+
+make-idldir:
+	if test ! -d $(install_idl_dir); then mkdir $(install_idl_dir); fi
+
+install-local: make-idldir
+	for i in $(install_IDLS); do \
+	  $(INSTALL_DATA) $$i $(install_idl_dir); done
+
+install-recursive: make-idldir
+	for i in $(SUBDIRS); do \
+	  if test ! -d $(install_idl_dir)/$$i; then mkdir $(install_idl_dir)/$$i; fi; \
+	  (cd $$i; $(MAKE) install); \
+	done
+
+uninstall:
+	for i in $(install_IDLS); do \
+	  rm -f $(install_idl_dir)/$$i; done
+
+uninstall-client: uninstall
+

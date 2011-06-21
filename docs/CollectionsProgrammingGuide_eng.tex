@@ -1,0 +1,595 @@
+
+% $Id: CollectionsProgrammingGuide_eng.tex,v 1.10 2001-07-05 13:15:55 yulp Exp $
+
+\subsection{ Introduction }
+
+ Query Collection expose high-level object model, intendent for 
+work with data sets, organized as so-called collections.
+
+ Using of Query Collections allow to reduce low-level SQL programming for
+ accessing and modifying of data: all typical operations are implemented
+ in collections objects.
+
+\subsection{ General description  }
+
+\subsubsection{ ``Phisycal sense'' of collection }
+
+ What is collection inside - just a set of SQL sentences for reading, writing
+and modification of data, which are evaluated during call of collection object methods.
+
+ Example: if you want to select some data from one table, you use
+some SQL sentence which have form:
+
+\begin{verbatim}
+ SELECT <select-part> FROM <from-part> WHERE <where-part>
+\end{verbatim}
+
+So this SQL sentence defines some data set, which can be described by
+ parts of our SQL sentence.
+Imagine now, that we want to retrieve from this data set all records, which
+satisfy some condition.To do it we can use such methods from typical collection interfaces 
+as \verb|retrieve_by_filter|; in SQL we must evaluate SQL sentence,
+which looks as 
+\begin{verbatim}
+ SELECT <select-part> FROM <from-part> WHERE <where-part> AND <condition>
+\end{verbatim}
+ Method \verb|update_by_filter| (intendent to update data, which 
+satisfy some condition ) causes evaluating of next SQL sentence:
+\begin{verbatim}
+ UPDATE <select-part> SET <set-part> WHERE <where-part> AND <filter>
+\end{verbatim}
+Note, that \verb|<set-part>| can be automatically 
+deduced from \verb|<select-part>|.
+
+I. e. during call of collection methods appropriate SQL sentences are
+built and evaluated.
+
+ So, what is the query collection itself: object, which simply
+ keeps and evaluates set of SQL sentences for data access and
+ modifying.
+
+
+In more formal terms we can say, that
+ UAKGCollection is defined by:
+ \begin{itemize}
+   \item Set of data fields (i. e. SELECT part of SQL sentence)
+   \item Data Source (i. e. FROM part of SQL sentence)
+   \item Query condition (i. e. WHERE part of SQL sentence)
+   \item Ordering (i. e. ORDER-BY part of SQL sentence)
+ \end{itemize}
+
+
+\subsection{ Steps for using collections interfaces  }
+
+ For work with query collections, application programmer must
+perform the next steps:
+
+ \begin{itemize}
+   \item create Collection using appropriate methods of QueryManager.
+  \item Using UAKGCollection you can query or modify data in it, or
+    receive \verb|Iterator| for sequential access to data set.
+  \item Before end of work it is necessary to clear server resources,
+   associated with  UAKGCollection by call of \verb|UAKGCollection::destroy| 
+ \end{itemize}
+
+\subsection{ Creation of Query Collections }
+
+ UAKGQuery supports two types of collections: 
+ UAKGCollection and UAKGKeyCollection.
+
+ UAKGCollection represents data set, UAKGKeyCollection - dataset with unique
+keys.
+ \newline
+ \newline
+ Exists 2 ways of creating UAKGCollection:
+\begin{itemize}
+   \item by SQL sentence
+   \item by set of field names and conditions. (i. e. by parts)
+ \end{itemize}
+
+for example, let's look at next two code fragments:
+
+\begin{verbatim}
+ UAKGCollection_var collection = queryManager->create_collection_by_parts(
+                                          "F1,F2", "UAKGTEST", "F1=1", "F2");
+\end{verbatim}
+
+or
+
+\begin{verbatim}
+ UAKGCollection_var collection = queryManager->create_collection_by_query(
+                         "select F1,F2 from UAKGTEST where F1=1 order by F2");
+\end{verbatim}
+
+ This 2 fragments give us identical result: collection which consists 
+ of fields F1 and F2 of records in UAKTEST, ordered by F2, where F1 is 1.
+ 
+ Parameters of \verb|create_collection_by_fields| in first code fragment are:
+
+ \begin{enumerate}
+   \item set of fields: SELECT part of SQL sentence
+   \item data source: FROM part.
+   \item select condition: WHERE part.
+   \item ordering (optional) : ORDER part.
+ \end{enumerate}
+
+\subsection{ Data Access }
+
+\subsubsection{ Receiving data with the help of Iterator's interface }
+
+ You can use \verb|Iterator| concepts to retrive data.
+ The steps for work with iterator are described below:
+
+ \begin{enumerate}
+  \item receive \verb|Iterator|, by call of \verb|create_iterator| method of collection.
+  \item Use \verb|Iterator| API for navigation across data set.
+  \item destroy \verb|Iterator|
+ \end{enumerate}
+
+Example:
+
+\begin{verbatim}
+ UAKGIterator_var iterator_ = collection_->create_iterator();
+ Boolean more = true;
+ while( more )
+ { 
+   OctSeq_var octSeq_ = iterator_->fetch_rc(50, more);
+   printRC( octSeq_ );
+ }
+ iterator->destroy();
+\end{verbatim}
+
+ Interface \verb|Iterator| expose next methods:
+
+ \begin{itemize}
+   \item \verb|fetch_rc( ULong n, Boolean& more )|
+     Read \verb|n| records as byte stream in RC-coding
+   \item \verb|fetch_records( ULong n, Boolean& more )|
+     Read \verb|n| records and return it as RecordSequence.
+   \item \verb|skip( ULong n, Boolean& more )|
+     Skip \verb|n| records without retrieving of data.
+ \end{itemize}
+
+\subsubsection{  Retryiving data via collection methods }
+
+ You can read data from UAKGCollection
+ directly, using next collection methods:
+
+\begin{itemize}
+ \item \verb|retrieve_by_filter( const char* where_filter )|
+ \item \verb|retrieve_by_pattern( const Record& pattern )|
+\end{itemize}
+
+Both of those methods return RC-coded byte stream, which contains records
+from data set collection filtered by parameter.
+First method filters data set before retrieving by logical expression in \verb|where_filter|, second -- by principle of pattern matching (see \ref{patterns} ).
+
+Example:
+
+\begin{verbatim}
+ UAKGCollection_var collection_ = queryManager->create_collection_by_query(
+                          "select F1,F2 from UAKGTEST where F1=1 order by F2");
+ OctSeq_var octSeq_ = collection_->retrieve_by_filter("F2='test'");
+ printRC( octSeq_ );
+ collection_->destroy();
+\end{verbatim}
+
+ This code fragment will print all records of created collection, where
+F2 is equal to string \verb|'test'| . (I. e. all records in result will
+have form \verb|(1,'test')| ).
+
+
+\subsubsection{ Pattern matching }
+ \label{patterns}
+
+ Concept of pattern matching is often used in UAKGQuery Service for filtering
+ data sets: for example, method \verb|retrieve_by_pattern| retrieves records
+ which  match pattern, passed as argument of this method. Which means:
+ pattern matching concept is derived from QBE (Query By Example) concept --
+ in result set we receive records, which are "the same" as pattern, exclude
+ fields, which set in pattern as empty.
+
+More formal:
+
+ Pattern is a record (i. e. have type \verb|Record|). Fields of pattern are
+used for filtering data sets. 
+Pattern matching for collection is defined as following:
+\begin{itemize}
+ \item Structure of pattern record  must be equal to structure of records in queuing datatset (i.e. number of fields and types must be equal)
+ \item Record \verb|r| match pattern \verb|p| $iff$
+ \begin{enumerate}
+   \item $\forall i \in 0\dots length(r): p[i]!=NIL \rightarrow p[i]\; match \;r[i]$
+    (i. e. for all field indexes, appropriate fields must match if pattern 
+ field is not NULL).
+   \item For fields $p_i,r_i$, $p_i\; match \;r_i$ iff
+    \begin{enumerate}
+       \item $type(r_i)==string \rightarrow (r_i\;\;LIKE\;\;p_i)$ 
+       \item $type(r_i)!=string \rightarrow (r_i\;\;==\;\;p_i)$ 
+    \end{enumerate}
+    I. e. 2 fields match, if they are identical for non-string types, or
+    if  LIKE matching is met for string types.
+ \end{enumerate}
+\end{itemize}
+
+Practical example:\\
+
+Suppose we have table UAKGTEST with two fields: F1 of type NUMBER and F2 of type VARCHAR2.
+Then, we created collection which works with records of this table.
+Then, for retrieving all records from this collection with F1=5 programmer must perform next steps:
+\begin{itemize}
+ \item Form pattern as a 2 field record , where first field must be 5, second - NULL . (i. e. second field  will not participate in matching).
+ \item get needed records as result for \verb|retrieve_by_pattern| with pattern as parameter.
+\end{itemize}
+
+\begin{verbatim}
+Record_var pattern = new Record;
+pattern->length(2);
+FieldValueAccess::setLong(pattern[0],5);
+FieldValueAccess::setNull(pattern[1]);
+OctSeq_var octSeq = collection_->retrieve_by_pattern(pattern);
+printRC(octSeq);
+\end{verbatim}
+
+\subsection{ adding, updating and deleting of data }
+
+  Of course, except retrieving of data, you can add, modify or delete collection items.
+
+ List of aprropriate methods:
+ \begin{enumerate}
+  \item Adding data:
+     \begin{itemize}
+       \item \verb|add_record( const Record& element )| -- add one record to collection
+       \item \verb|add_records( const RecordSeq& elements )| -- add sequence of records to collection.
+       \item \verb|add_rc( const OctSeq& rc )| -- add sequence of records, coded in RC stream. 
+     \end{itemize}
+
+Note, that during adding of records no checking of belonging added data to 
+target collection is performed.
+For example, let's look at next code fragment:
+\begin{verbatim}
+ UAKGCollection_var collection=qm->create_collection(
+                                         "select * from emp where deptno=22"
+                                                    );
+ ULong n=collection->number_of_records();
+ cout << "now number of records is:" << n << endl;
+ RecordDescription_var rd = collection->get_record_description();
+ Record_var record=CosQueryFacade::RecordAccess::createRecordByDescription(rd);
+ CosQueryFacade::RecordAccess::setShortByName(record.inout(),"EMPNO",11,rd);
+ CosQueryFacade::RecordAccess::setShortByName(record.inout(),"DEPTNO",11,rd);
+ collection->add_record(record);
+ n=collection->number_of_records();
+ cout << "now number of records is:" << n << endl;
+\end{verbatim} 
+ After successfull execution of this fragment one item will be added to \verb|emp| table, but number of elements in collection will not change.
+
+  \item Updating of data:
+     \begin{itemize}
+       \item \verb|update_by_pattern( const Record& newRecord, const Record& pattern )| -- set to \verb|newRecord| records, which matching pattern \verb|pattern|. For example, next code fragment:
+\begin{verbatim}
+  SRecord sr1, sr2;
+  collection_->update_by_pattern(
+                 sr1._short(1)._short(2).in(), sr2_._nil()._short(2)
+                               )
+\end{verbatim}
+    
+       \item \verb|update_by_filter( const Record& newRecord, const char* filter )| - set to \verb|newRecord| all records, which satisfy logical condition in \verb|filter|.
+
+For example, next code fragment:
+\begin{verbatim}
+   collection->update_by_filter(sr._short(1)._short(2),"x2=2");
+\end{verbatim}
+    will set to \verb|(1,2)| all records in collection for which \verb|x2=2|
+     \end{itemize}
+  \item Deleting data:
+     \begin{itemize}
+       \item \verb|remove_record( const Record& record )| - remove records, which are equal to given record.
+       \item \verb|remove_records_by_filter( const char* filter )| - remove records by filter.
+       \item \verb|remove_records_by_pattern( const Record& pattern )| - remove records by pattern.
+       \item \verb|remove_all_records()| - remove all records from collection.
+     \end{itemize}
+ \end{enumerate}
+
+Example:
+
+\begin{verbatim}
+  UAKGCollection_var collection_ = queryManager->create_collection_by_query(
+                           "select F1,F2 from UAKGTEST where F1=1 order by F2");
+  Record_var inpRecord = new Record;
+  inpRecord->length(2);
+  FieldValueAccess::setLong( inpRecord[0], 5);
+  FieldValueAccess::setString( inpRecord[1], "test" );
+  collection_->add_record(inpRecord);
+  FieldValueAccess::setNull( inpRecord[1] );
+  OctSeq_var octSeq_ = collection_->retrieve_by_pattern(inpRecord);
+  printRC( octSeq_ );
+  collection_->remove_records_by_pattern( inpRecord );
+  collection_->destroy();
+\end{verbatim}
+
+\subsection{ Collection queries }
+
+ The shown up set of methods is not always  sufficient for comfortable access to data collection.
+Sometimes we need to perform more complicated actions:
+for example change set of requested fields or receive some data from
+linked table.
+
+ For this purpose family of \verb|evaluate_xxx| methods of \verb|UAKGColletion| is intendent. (i. e. collections implements interface QueryEvaluator).
+
+ For example, next query:
+\begin{verbatim}
+ result = collection->evaluate_rc_e("select x1,x3 from @ where x1=x2");
+\end{verbatim}
+ will fetch in result fields \verb|x1| and \verb|x2| for records, in which \verb|x1=x3|.
+
+Next code fragment:
+\begin{verbatim}
+ collection=queryManager->create_collection("select * from orders");
+ result=collection->evaluate_rc( 
+   "select @,CUSTOMERS.NAME from @,CUSTOMERS where CUSTOMER.ID=customer_id
+                              );
+\end{verbatim}
+ will retrieve all fields of order table and names of customers from linked table.  
+
+Next query:
+\begin{verbatim}
+ result=collection->evaluate_rc("select @ from @ where not @")
+\end{verbatim}
+ will invert collection (i. e. select all records which are situated at the
+same data source, but not belong to original collection).
+
+Now, lets define semantics of our extending of SQL by \verb|@| :
+\newline
+If collection is based on SQL expression in form:
+\begin{verbatim}
+  select <select-part> from <from-part> where <where-part>
+\end{verbatim}
+and we pass in \verb|evaluate_xxx|  expression:
+\begin{verbatim}
+  select @,<new-select-part>
+   from @,<new-where-part> [where <new-where-part>]
+\end{verbatim}
+ than result expression will have form:
+\begin{verbatim}
+  select <select-part>,<new-select-part>
+   from <from-part>,<new-from-part>
+   where (<where-part>) AND (<new-where-part>)
+\end{verbatim}
+
+ Suppressed SQL sentences is handled in less or more equal way.
+ 
+\subsubsection{ Limitations }
+
+  \begin{itemize}
+    \item Colection can evaluate only SELECT queries without \verb|HAVING_BY| and \verb|GROUP_BY| clauses. Full grammar of Collection SQL is listed in 
+  \ref{Collection-select-grammar}
+  \end{itemize}
+
+\subsubsection{ List of methods }
+
+\begin{itemize}
+ \item 
+   \begin{verbatim}
+      evaluate_rc( const char* queryText, const char* queryFlags, 
+                   const RecordDescription& recordDescription, 
+                   const OctSeq& params)
+   \end{verbatim}
+ \item 
+   \begin{verbatim}
+     evaluate_rc_inout(const char* queryText, const char* queryFlags, 
+           const RecordDescription& recordDescription, OctSeq& params)
+   \end{verbatim}
+ \item 
+   \begin{verbatim}
+     evaluate_record( const char* queryText, const char* queryFlags, 
+           const RecordDescription& recordDescription, const Record& params )
+   \end{verbatim}
+ \item 
+   \begin{verbatim}
+    evaluate_records_inout(const char* queryText, const char* queryFlags, 
+                           const RecordDescription& recordDescription, 
+                           RecordSeq& params)
+   \end{verbatim}
+ \item 
+   \begin{verbatim}
+     evaluate_records(const char* queryText, const char* queryFlags, 
+                      const RecordDescription& recordDescription, 
+                      const RecordSeq& params)
+   \end{verbatim}
+\end{itemize}
+
+\subsection{ SubCollection|}
+
+ As can be deduced from name of sections:  you can query some subset of collection in new collection (so-called subcollection).
+
+Application programmer must perform next steps to use subcollection technique:
+
+\begin{enumerate}
+  \item Creation of \verb|SubCollection|
+     \begin{itemize}
+       \item \verb|create_subcollection( const char* subquery )| 
+       In this method \verb|subquery| is expression on the same language, as
+       for \verb|evaluate_xxx| family of collection methods. Created collection
+       is result of evaluating such query as collection. Note, that if 
+        data-source (i.e. where-part of subquery) contains multiple tables,
+        then resulting collection is read-only.
+       \item \verb|create_subcollection_by_pattern( const Record& pattern )|
+       The resulting collection is just subset of records of original collection, which match pattern \verb|pattern|.
+     \end{itemize}
+  \item Work with received subcollection, using UAKGCollection API
+  \item delete \verb|SubCollection| using method destroy()
+ \end{enumerate}
+
+Example:
+
+\begin{verbatim}
+ UAKGCollection_var collection_ = queryManager->
+              create_collection_by_fields("tname, tabtype", "tab", "1=1", "");
+ UAKGIterator_var iterator = collection_->create_uakgiterator();
+ Boolean more;
+ RecordSeq_var recordSeq = iterator->fetch_records(0, more);
+ FieldValueAccess::setNull(recordSeq[0][0]);
+ iterator->destroy();
+ UAKGCollection_var new_collection_ = collection_->
+                                create_subcollection_by_pattern(recordSeq[0]);
+ iterator = new_collection_->create_uakgiterator();
+ recordSeq = iterator->fetch_records(0, more);
+ printRecordSeq(cout,recordSeq.in());
+ iterator->destroy();
+ new_collection_->destroy();
+ collection_->destroy();
+\end{verbatim}
+
+
+\subsection{ UAKGKeyCollection}
+
+ UAKGKeyCollection is a specialization of UAKGCollection with property
+``have primary key''. \footnote{i. e. key, which is unique for each record in collection }.
+
+ Additional methods provide API for accessing, modifying and deleting elements
+by keys.
+
+\subsubsection{ Creation of UAKGKeyCollection }
+
+ for creation of KeyCollection you can use 2 methods of UAKGQueryManager:
+\begin{itemize}
+  \item \verb|create_key_collection_by_parts| -- which is create key collection,by appropriative parts of SQL sentence and yet ine additional part: list of field names, of which key is consists.
+Example:
+\begin{verbatim}
+ UAKGKeyCollection_var collection = queryManager->
+   create_key_collection_by_parts("F1,F2","UAKGTEST","F1=1","F2","F1");
+\end{verbatim}
+ \item \verb|create_key_collection_by_query| -- which is create key collection by SQL query , with yet one our extension of SQL: WITH KEY clause.
+\begin{verbatim}
+ UAKGKeyCollection_var collection = queryManager->
+   create_key_collection_by_query(
+    "select F1,F2  from UAKGTEST where F1=1 order by F2  with key F1"
+                                 );
+\end{verbatim}
+  \verb|WITH KEY| clause can be used only for creation of key collection and
+SQL sentence with it must have following syntax:
+\begin{verbatim}
+  SELECT <selection> <table-expr> WITH KEY <selection>
+\end{verbatim} 
+\end{itemize}
+
+ As in SQL92 key can be compound:
+\begin{verbatim}
+  UAKGKeyCollection_var collection=queryManager->
+           create_key_collection_by_query(
+                     "select * from X with key x1, x2");
+\end{verbatim}
+
+-these two parts of code are equivalent,  they create the collection UAKGTest, where F1 is the primary key.  As we can see, we have one more SQL- clause\verb|WITH KEY|.
+It may be used only to get collection with keys, enclosure syntax with this clause is following:
+
+\begin{verbatim}
+ SELECT <selection> <table-expr> WITH KEY <selection>
+\end{verbatim}
+
+As in SQL92,  the sequence of margins can create the key too:
+ \begin{verbatim}
+ UAKGKeyCollection_var collection = queryManager->
+      create_key_collection_by_query(
+                 "select * from X with key x1,x2");
+\end{verbatim}
+
+
+ Note, that specification of correct keys is business of application 
+programmer : UAKGQueryService use this information, but does not do
+any checking for accordance with real structure of database.
+
+\subsubsection{ Methods of UAKGKeyCollection }
+
+ UAKGKeyCollection provide next methods, for retrieving, updating
+ and deleting  elements by keys:
+
+ \begin{itemize}
+   \item \verb|retrieve_record_with_key(const Record& key)| - retrieve record with key \verb|key|.
+   \item \verb|retrieve_records_with_keys(const OctSeq& keys)| - retrieve sequence of records with accordance of \verb|keys|
+   \item \verb|update_record_with_key(const Record& newRecord, const Record& key)| -- set to \verb|newRecord| element with key \verb|key|.
+   \item \verb|update_records_with_keys(const OctSeq& records)| -- update records, with the same keys, as appropriate records in argument.
+   \item \verb|remove_records_with_keys(const OctSeq& keys)| -- remove records with keys.
+ \end{itemize}
+
+ Also 2 helper methods are provided by UAKGKeyCollection:
+
+ \begin{itemize}
+   \item \verb|get_key_description()| -- return description of collection key
+   \item \verb|extract_keys(const OctSeq& records)| -- extract keys from sequence of records.
+ \end{itemize}
+
+Example:
+
+\begin{verbatim}
+  UAKGKeyCollection_var collection_ = queryManager->create_key_collection_by_query("select F1,F2 from UAKGTEST where F1=1 with key F2");
+  Record_var inpRecord_ = new Record;
+  inpRecord_->length(1);
+  FieldValueAccess::setString(inpRecord_[0], "test");
+  collection_->remove_record_with_key( inpRecord );
+  collection_->destroy();
+\end{verbatim}
+
+\subsection{ Using of UAKGCollectionListener }
+
+ It becomes common and useful technique to organize program coupling via 
+ notifivation about important events in life of some service.
+ On this purpose UAKGCollection provide
+ such mechanism of "Listeners" - user can add to collection own implementation
+ of \verb|UAKGCollectionListener| callback interface, which would be called
+ during performing of collection actions. 
+
+\begin{verbatim}
+ interface UAKGCollectionListener
+ {
+   // called, when elements are added:
+   void elements_added(in OctSeq elements);
+
+   //called, when elements updated
+   void elements_updated(in OctSeq prev_elements,
+                         in OctSeq new_elements); 
+
+   //called, when elements removed:
+   void elements_removed(in OctSeq elements)
+
+   //called, when all ellements in collection are removed
+   void all_elements_removed();
+
+   //called, when collection is destroyed
+   void collection_destroyed();
+ }
+\end{verbatim}
+
+ Application programmer can implement this interface and bind it with
+ collection for receiving events via method:
+\begin{verbatim}
+ unsigned long UAKGCollection::add_listener(
+                                 in UAKGCollectionListener listener,
+                                 in unsigned short eventMask);
+\end{verbatim}
+ Method returns number, which identifiy passed listener from
+collection side. This number can be used for unbinding listener from
+collection with help of method:
+\begin{verbatim}
+ unsigned long UAKGCollection::remove_listener(in unsigned long listenerIndex);
+\end{verbatim}
+
+ At last, \verb|eventMask| is a bit mask of events, which listener want to receive.
+
+
+ Using notification technique remember, that cost of collection data for 
+notificating can be high, and that synchronized calls of callback functions
+on each event are not scalable technique. If you have situation, when N service
+clients must receive notifications, than better do not register N listeners but 
+create additional element of infrastructure, which receive notification and 
+send it to clients, using asynchronics techniques (for example, via CORBA Event Service).
+
+
+\subsection{ Limitations of using UAKGQuery collections interfaces }
+
+For present tim , one instance of collection can be used in only 
+one instance of transaction at the same time.
+
+(I. e. concurrent access to collection from different transactions is 
+not safe).
+
+

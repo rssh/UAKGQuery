@@ -1,0 +1,10 @@
+STEP7_DIR=$(project_root)/7
+
+STEP7=$(TARGET_DIR)/STEP7.exe
+STEP7_OBJS=$(TARGET_DIR)/STEP7.obj $(TARGET_DIR)/printLib.obj
+
+$(TARGET_DIR)/STEP7.obj: $(STEP7_DIR)/STEP7.cpp
+        $(CXX) $(CXXFLAGS) -c $(STEP7_DIR)/STEP7.cpp
+
+$(TARGET_DIR)/STEP7.exe: $(STEP7_OBJS)
+        $(CXX) $(STEP7_OBJS) $(LIBS)

@@ -1,0 +1,203 @@
+
+TEX_FILES=ProgrammingGuide_rus.tex \
+          ProgrammingGuide_eng.tex \
+          AdministrationGuide_rus.tex \
+          AdministrationGuide_eng.tex \
+          Description_rus.tex \
+          Description_eng.tex \
+          Changes_rus.tex \
+          Changes_eng.tex 
+
+DVI_FILES=ProgrammingGuide_rus.dvi \
+          ProgrammingGuide_eng.dvi \
+          AdministrationGuide_rus.dvi \
+          AdministrationGuide_eng.dvi \
+          Description_rus.dvi \
+          Description_eng.dvi \
+          Changes_rus.dvi \
+          Changes_eng.dvi 
+
+PS_FILES=ProgrammingGuide_rus.ps \
+         ProgrammingGuide_eng.ps \
+         AdministrationGuide_rus.ps \
+         AdministrationGuide_eng.ps \
+         Description_rus.ps \
+         Description_eng.ps \
+         Changes_rus.ps \
+         Changes_eng.ps 
+
+PDF_FILES=ProgrammingGuide_rus.pdf \
+          ProgrammingGuide_eng.pdf \
+          AdministrationGuide_rus.pdf \
+          AdministrationGuide_eng.pdf \
+          Description_rus.pdf \
+          Description_eng.pdf \
+          Changes_rus.pdf \
+          Changes_eng.pdf 
+
+API_FILE=html/UAKGQuery.html
+HTML_PR_RUS=ProgrammingGuide_rus/index.html
+HTML_AD_RUS=AdministrationGuide_rus/index.html
+HTML_GD_RUS=Description_rus/index.html
+HTML_CH_RUS=Changes_rus/index.html
+HTML_PR_ENG=ProgrammingGuide_eng/index.html
+HTML_AD_ENG=AdministrationGuide_eng/index.html
+HTML_GD_ENG=Description_eng/index.html
+HTML_CH_ENG=Changes_eng/index.html
+
+
+build: $(PDF_FILES) web
+
+clean:
+	-rm -rf ProgrammingGuide_rus ProgrammingGuide_eng
+	-rm -rf AdministrationGuide_rus AdministrationGuide_eng
+	-rm -rf Description_rus Description_eng
+	-rm -f *.aux *.log *.pdf *.dvi *.ps
+
+install:
+
+uninstall:
+
+docs: $(PDF_FILES) $(API_FILE)
+
+all: docs web
+
+.SUFFIXES: .tex .dvi .ps .pdf
+
+.tex.dvi:
+	latex $< 
+	-bibtex $*
+	latex $< 
+
+.tex.pdf:
+	pdflatex $<
+	-bibtex $*
+	pdflatex $<
+
+html/UAKGQuery.html:
+	(cd html; doc++ -Y -j -I FILES)
+
+GRADSOFT_WEB_ROOT=/1/rssh/GradSoftWeb/
+HTML_PR_RUS_GRADSOFT=$(GRADSOFT_WEB_ROOT)/rus/Products/UAKGQuery/ProgGuide
+PDF_PR_RUS_GRADSOFT=$(GRADSOFT_WEB_ROOT)/rus/Products/UAKGQuery/pdf
+HTML_AD_RUS_GRADSOFT=$(GRADSOFT_WEB_ROOT)/rus/Products/UAKGQuery/AdminGuide
+PDF_AD_RUS_GRADSOFT=$(GRADSOFT_WEB_ROOT)/rus/Products/UAKGQuery/pdf
+HTML_GD_RUS_GRADSOFT=$(GRADSOFT_WEB_ROOT)/rus/Products/UAKGQuery/Description
+PDF_GD_RUS_GRADSOFT=$(GRADSOFT_WEB_ROOT)/rus/Products/UAKGQuery/pdf
+HTML_CH_RUS_GRADSOFT=$(GRADSOFT_WEB_ROOT)/rus/Products/UAKGQuery/Changes
+PDF_CH_RUS_GRADSOFT=$(GRADSOFT_WEB_ROOT)/rus/Products/UAKGQuery/pdf
+HTML_PR_ENG_GRADSOFT=$(GRADSOFT_WEB_ROOT)/eng/Products/UAKGQuery/ProgGuide
+PDF_PR_ENG_GRADSOFT=$(GRADSOFT_WEB_ROOT)/eng/Products/UAKGQuery/pdf
+HTML_AD_ENG_GRADSOFT=$(GRADSOFT_WEB_ROOT)/eng/Products/UAKGQuery/AdminGuide
+PDF_AD_ENG_GRADSOFT=$(GRADSOFT_WEB_ROOT)/eng/Products/UAKGQuery/pdf
+HTML_GD_ENG_GRADSOFT=$(GRADSOFT_WEB_ROOT)/eng/Products/UAKGQuery/Description
+PDF_GD_ENG_GRADSOFT=$(GRADSOFT_WEB_ROOT)/eng/Products/UAKGQuery/pdf
+HTML_CH_ENG_GRADSOFT=$(GRADSOFT_WEB_ROOT)/eng/Products/UAKGQuery/Changes
+PDF_CH_ENG_GRADSOFT=$(GRADSOFT_WEB_ROOT)/eng/Products/UAKGQuery/pdf
+HTML_API_GRADSOFT=$(GRADSOFT_WEB_ROOT)/common/UAKGQuery/API
+
+web: $(API_FILE) $(HTML_PR_RUS) $(HTML_PR_ENG) $(HTML_AD_RUS) $(HTML_AD_ENG) \
+ $(HTML_GD_RUS) $(HTML_GD_ENG) $(HTML_CH_RUS) $(HTML_CH_ENG)
+
+install-web: web all
+	-mkdir -p $(HTML_API_GRADSOFT)
+	for i in html/*.class html/*.html html/*.gif; do \
+	 cp $$i $(HTML_API_GRADSOFT); \
+	done
+	-mkdir -p $(HTML_PR_RUS_GRADSOFT)
+	for i in ProgrammingGuide_rus/*; do\
+	 cp $$i $(HTML_PR_RUS_GRADSOFT); \
+	done
+	-mkdir -p $(HTML_AD_RUS_GRADSOFT)
+	for i in AdministrationGuide_rus/*; do\
+	 cp $$i $(HTML_AD_RUS_GRADSOFT); \
+	done
+	-mkdir -p $(HTML_GD_RUS_GRADSOFT)
+	for i in Description_rus/*; do\
+	 cp $$i $(HTML_GD_RUS_GRADSOFT); \
+	done
+	-mkdir -p $(HTML_PR_ENG_GRADSOFT)
+	for i in ProgrammingGuide_eng/*; do\
+	 cp $$i $(HTML_PR_ENG_GRADSOFT); \
+	done
+	-mkdir -p $(HTML_AD_ENG_GRADSOFT)
+	for i in AdministrationGuide_eng/*; do\
+	 cp $$i $(HTML_AD_ENG_GRADSOFT); \
+	done
+	-mkdir -p $(HTML_GD_ENG_GRADSOFT)
+	for i in Description_eng/*; do\
+	 cp $$i $(HTML_GD_ENG_GRADSOFT); \
+	done
+	-mkdir -p $(HTML_CH_RUS_GRADSOFT)
+	for i in Changes_rus/*; do\
+	 cp $$i $(HTML_CH_RUS_GRADSOFT); \
+	done
+	-mkdir -p $(HTML_CH_ENG_GRADSOFT)
+	for i in Changes_eng/*; do\
+	 cp $$i $(HTML_CH_ENG_GRADSOFT); \
+	done
+	-mkdir -p $(PDF_PR_RUS_GRADSOFT)
+	cp ProgrammingGuide_rus.pdf $(PDF_PR_RUS_GRADSOFT)
+	-mkdir -p $(PDF_AD_RUS_GRADSOFT)
+	cp AdministrationGuide_rus.pdf $(PDF_PR_RUS_GRADSOFT)
+	-mkdir -p $(PDF_PR_ENG_GRADSOFT)
+	cp ProgrammingGuide_eng.pdf $(PDF_PR_ENG_GRADSOFT)
+	-mkdir -p $(PDF_AD_ENG_GRADSOFT)
+	cp AdministrationGuide_eng.pdf $(PDF_PR_ENG_GRADSOFT)
+	-mkdir -p $(PDF_GD_ENG_GRADSOFT)
+	cp Description_eng.pdf $(PDF_GD_ENG_GRADSOFT)
+	-mkdir -p $(PDF_GD_RUS_GRADSOFT)
+	cp Description_rus.pdf $(PDF_GD_RUS_GRADSOFT)
+	-mkdir -p $(PDF_CH_RUS_GRADSOFT)
+	cp Changes_rus.pdf $(PDF_CH_RUS_GRADSOFT)
+	-mkdir -p $(PDF_CH_ENG_GRADSOFT)
+	cp Changes_eng.pdf $(PDF_CH_ENG_GRADSOFT)
+
+GRADSOFT_WEB_INTERNAL_ROOT=/1/rssh/GradSoftInternalWeb/
+HTML_PR_INTERNAL_GRADSOFT=$(GRADSOFT_WEB_INTERNAL_ROOT)/UAKGQuery/ProgrammingGuide_rus
+HTML_AD_INTERNAL_GRADSOFT=$(GRADSOFT_WEB_INTERNAL_ROOT)/UAKGQuery/AdministrationGuide_rus
+HTML_API_INTERNAL_GRADSOFT=$(GRADSOFT_WEB_INTERNAL_ROOT)/UAKGQuery/API
+
+install-internal-web: web 
+	-mkdir -p $(HTML_API_INTERNAL_GRADSOFT)
+	for i in html/*.class html/*.html html/*.gif; do \
+	 cp $$i $(HTML_API_INTERNAL_GRADSOFT); \
+	done
+	-mkdir -p $(HTML_PR_INTERNAL_GRADSOFT)
+	for i in ProgrammingGuide_rus/*; do\
+	 cp $$i $(HTML_PR_INTERNAL_GRADSOFT); \
+	done
+	-mkdir -p $(HTML_AD_INTERNAL_GRADSOFT)
+	for i in AdministrationGuide_rus/*; do\
+	 cp $$i $(HTML_AD_INTERNAL_GRADSOFT); \
+	done
+
+
+$(HTML_PR_RUS): ProgrammingGuide_rus.tex ProgrammingGuide_rus.pdf
+	latex2html -charset KOI8-R -split 0 -info 0 -address "GradSoft" -local_icons ProgrammingGuide_rus.tex
+
+$(HTML_PR_ENG): ProgrammingGuide_eng.tex ProgrammingGuide_eng.pdf
+	latex2html -split 0 -info 0 -address "GradSoft" -local_icons ProgrammingGuide_eng.tex
+
+$(HTML_AD_RUS): AdministrationGuide_rus.tex AdministrationGuide_rus.pdf
+	latex2html -charset KOI8-R -split 0 -info 0 -address "GradSoft" -local_icons AdministrationGuide_rus.tex
+
+$(HTML_AD_ENG): AdministrationGuide_eng.tex AdministrationGuide_eng.pdf
+	latex2html -split 0 -info 0 -address "GradSoft" -local_icons AdministrationGuide_eng.tex
+
+$(HTML_GD_RUS): Description_rus.tex Description_rus.pdf
+	latex2html -charset KOI8-R -split 0 -info 0 -address "GradSoft" -local_icons Description_rus.tex
+
+$(HTML_CH_RUS): Changes_rus.tex Changes_rus.pdf
+	latex2html -charset KOI8-R -split 0 -info 0 -address "GradSoft" -local_icons Changes_rus.tex
+
+$(HTML_GD_ENG): Description_eng.tex Description_eng.pdf
+	latex2html -split 0 -info 0 -address "GradSoft" -local_icons Description_eng.tex
+
+$(HTML_CH_ENG): Changes_eng.tex Changes_eng.pdf
+	latex2html -split 0 -info 0 -address "GradSoft" -local_icons Changes_eng.tex
+
+install-web-distributive: install-web install-internal-web
+	cp ../../UAKGQuery-@VERSION@.tar.gz $(GRADSOFT_WEB_ROOT)/common/UAKGQuery
+	cp ../../UAKGQuery-@VERSION@.zip $(GRADSOFT_WEB_ROOT)/common/UAKGQuery
+	cp ../../UAKGQuery-@VERSION@.tar.gz $(GRADSOFT_WEB_INTERNAL_ROOT)/UAKGQuery

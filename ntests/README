@@ -1,0 +1,26 @@
+
+
+-------------How to add test:
+
+0 - general
+
+  1. Add needed info to database creation script.
+    for Oracle:
+          in ntests/SQL/Oracle
+               t_init.sql
+               t_drop.sql
+  2. Add test, which based on such script to testcase.
+     doQueryStuff must return true, if test was succesfull.
+
+1 - in 3based.
+  1. see general.
+  2. add tXXXX.cpp to ntests/cpp/3based
+     where XXXX is number of workitem created in view of bug report 
+  3. modify ntests/cpp/3based/mk3based.mak
+  4. modify ntests/cpp/3based/run_ts.sh
+
+-----------current issues
+
+cpp/3based/t1539 failed under mico -> this is MICO bug.
+
+

@@ -1,0 +1,17 @@
+# $Id: Makefile.nt,v 1.2 2003-03-13 13:30:15 rssh Exp $
+
+
+include ../../env_inc.nt.mak
+include ../../config/ORB_description.nt.mak
+include ../../config/env_common.nt.mak
+
+
+default: steps
+
+include mksteps.nt.mak
+
+clean:
+        @if exist *.obj $(RM) *.obj
+        @if exist *.lib $(RM) *.lib
+        @if exist *.exe $(RM) *.exe
+

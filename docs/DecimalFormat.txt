@@ -1,0 +1,21 @@
+
+struct Decimal
+{
+ short precision;
+ short scale;
+ sequence<octet> value;
+}
+
+value  [exp][+|-][digits]
+
+ where exp: exponente decimal exponente
+ 
+
+scale - the value of exponent
+
+value[] - string of the number without exponent 
+          Common format for value[] : -{d}[.]{d}
+
+Samples:
+1. Negative numbers: -1435.675e+12 -> value = "-1435.675", scale = 12
+2. Positive numbers:  1435.675e+12 -> value =  "1435.675", scale = 12

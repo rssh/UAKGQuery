@@ -1,0 +1,10 @@
+create
+f1
+uakgtest2
+
+
+subcollection
+select @ from @ where @ and 1=1
+count
+sql
+quit

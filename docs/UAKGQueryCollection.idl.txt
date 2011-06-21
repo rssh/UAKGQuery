@@ -1,0 +1,229 @@
+#################################################################
+# 1. UAKGKeyCollection
+
+ <key-part>
+
+
+----(a)
+
+count
+  
+  select count(*) 
+    from (select <select-part> 
+             from <from-part>
+             where (<where-part>)
+                   and ( <key-part> )
+         )
+
+----(b) retrieve_record_with_key(Record key):
+
+  UAKGCollection.select_by_filter( GEN_STR(key) )
+
+GEN_STR: (RecordDescription, Record) -> string
+
+----(c) update_record_with_key(Record newRecord):
+
+  UAKGCollection.update_by_pattern( newRecord, GEN_FILTER(<key-part>) )
+
+GEN_FILTER: Generates full-field record based on key-part for filter
+
+----(d) remove_record_with_key(Record key):
+
+  UAKGCollection.remove_by_filter( GEN_FILTER(<key-part>) )
+
+ Rulya-s comments:
+
+   1. GEN_FILTER must be generated once.
+   2. may be add operation with sequences of keys ?
+
+#################################################################
+# 2. UAKGIterator
+
+ <query>
+
+fetch_rc: query.fetch_rc
+
+fetch_records: query.fetch_records
+
+ Rulya-s comments:
+
+  1. how about more ?
+
+#################################################################
+# 3. UAKGCollection
+
+select Fields(<select-part>) from <from-part> where <where-part>
+
+
+ <select_part> :: <field_name>{,<field_name>}
+ <from_part> :: <table_name>{,<table_name>}
+ <where_part> :: string
+
+ <order_by> :: [<field_name>{,<field_name>}]
+ <filter> :: string
+
+
+----(!)
+
+
+GEN_VAL("x,y,z"):
+    "x,y,z" -> ":x, :y, :z"
+
+GEN_EQ([x,y,z],s):
+    x,y,z  -> x = :x|s , y=:y|s, z=:z|s  
+
+GEN_EQ([x,y,z],"1"):
+    x,y,z  -> "x = :x1, y=:y1, z=:z1"
+
+----(a) 
+
+select:  
+
+  select <select-part> 
+    from <from-part> 
+    where <where-part> 
+    order by <order-by>
+
+ distinct
+
+  select distinct <select-part> 
+    from <from-part> 
+    where <where-part> 
+    order by <order-by>
+
+ by pattern
+
+  select <select-part>
+    from <from-part>
+    where (<where-part>) 
+      and ( GEN_EQ(<select-part>) ) 
+    order by <order-by>
+
+ by filter (dynamic)
+
+  select <select-part>
+    from <from-part>
+    where (<where-part>) 
+      and ( <filter> ) 
+    order by <order-by>
+
+ by range
+
+  select <select-part>
+    from (select rownum x, <select-part> where rownum < :HI)
+    where x > :LOW
+    order by <order-by>
+
+----(b)
+
+count:
+
+  select count(*) 
+    from (select <select-part> 
+             from <from-part>
+             where (<where-part>)
+         )
+
+ by filter
+
+  select count(*) 
+    from (select <select-part> 
+             from <from-part>
+             where (<where-part>)
+                   and ( <filter> )
+         )
+----(c)
+
+add_record:
+add_records:
+
+insert:  
+
+  insert 
+    into <from-part> ( <select-part> ) 
+    values ( GEN_VAL(<select-part>) )
+    where (<where-part>)
+
+
+----(d)
+
+update_by_pattern( Record newRecord, Record pattern ):
+
+ update:  
+
+  update <from-part>
+    set GEN_EQ(<select-part>) 
+    where (<where-part>) 
+          and GEN_EQ(<select-part>,1)
+
+ <select-part> << newRecord
+ <select-part>,1 << pattern
+
+update_by_filter( Record newRecord, string filter ):
+
+  update <from-part>
+    set GEN_EQ(<select-part>) 
+    where (<where-part>) 
+          and (<filter>)
+
+ <select-part> << newRecord
+
+----(e)
+
+remove:
+
+ remove_all_records
+
+  delete <from-part>
+    where ( <where-part> )
+
+ remove_by_filter( <filter> )
+
+  delete <from-part> 
+    where ( <where-part> )
+          and ( <filter> )
+
+ remove_by_pattern( pattern )
+
+  delete <from-part> 
+    where ( <where-part> )
+          and ( GEN_EQ(<select-part>) )
+
+  <select-part> << pattern
+
+
+----(f)
+
+evaluate_query("select [@,][new-select-part] from @[,new_from_part] 
+                                             [where new_where_part] )
+
+  select <select-part>,<new-select-part>
+    from <from-part>,<new-from-part>
+    where (<where-part>) 
+          AND (<new-where-part>)
+
+
+----(g)
+
+create_subcollection()
+
+
+ create_union(arg, predicate)
+
+
+  select <select-part>,<arg-select>
+    from <from-part>,<arg-from-part>
+    where (<where-part>) 
+          and (<arg-where-part>)
+          and (<predicate>)
+
+ create_intersection
+
+  select <select-part> from <from-part> where <where-aprt> AND <arg-where-part>
+
+
+create_sup
+
+  select <select-part> from <from-part> where <where-aprt> OR <arg-where-part>
+
+###########################################################################

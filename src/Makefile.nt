@@ -1,0 +1,96 @@
+# $Id: Makefile.nt,v 1.17 2003-12-09 12:05:10 kav Exp $
+
+include ../env_inc.nt.mak
+include ../config/ORB_description.nt.mak
+include ../config/env_common.nt.mak
+
+SUBDIRS=Common Oracle8 InterBase RecordSet Utils Numeric Pool
+
+default: build
+
+include ..\idl\mkidl.nt.mak
+#
+include mksrc.nt.mak
+include Common\mkCommon.nt.mak
+include Numeric\mkNumeric.nt.mak
+include RecordSet\mkRecordSet.nt.mak
+!ifdef HAVE_INTERBASE
+include InterBase\mkInterBase.nt.mak
+!endif
+!ifdef HAVE_ORACLE
+include Oracle8\mkOracle8.nt.mak
+!endif
+include RecordSet\mkRecordSet.nt.mak
+include Utils\mkUtils.nt.mak
+include Utils\QueryGrammar\mkQueryGrammar.nt.mak
+include Pool\mkPool.nt.mak
+
+CosQuery_SERVER_OBJS= \
+    $(CosQuery_UAKGQueryCollection_OBJS) \
+    $(CosQuery_Common_OBJS) \
+    $(CosQuery_Numeric_OBJS) \
+    $(CosQuery_RecordSet_OBJS) \
+    $(CosQuery_Facade_OBJS) \
+    $(CosQuery_Oracle8_OBJS) \
+    $(CosQuery_InterBase_OBJS) \
+    $(CosQuery_RC_OBJS) \
+    $(CosQuery_Utils_OBJS) \
+    $(CosQuery_Utils_QueryGrammar_OBJS) \
+    $(CosQuery_idl_OBJS) \
+    $(CosQuery_Pool_OBJS)
+#
+CosQuery_CLIENT_OBJS= \
+    $(CosQuery_idl_OBJS) \
+    $(CosQuery_Common_CLOBJS) \
+    $(CosQuery_Facade_OBJS) \
+    $(CosQuery_Numeric_OBJS) \
+    $(CosQuery_RecordSet_OBJS) \
+    $(CosQuery_RC_OBJS) \
+    $(CosQuery_Utils_OBJS) \
+        UAKGQuerySingletonInit.obj
+
+build-obj: UAKGQuerySingletonInit.obj
+    @for %i in ($(SUBDIRS)) do @cd $(PROJECT_ROOT)\src\%i && $(MAKE) /F Makefile.nt build
+
+
+build-client-obj: UAKGQuerySingletonInit.obj
+    @for %i in ($(SUBDIRS)) do @cd $(PROJECT_ROOT)\src\%i && $(MAKE) /F Makefile.nt build-client
+
+
+
+default-build: build 
+build: build-obj client-lib exe
+build-client: build-client-obj client-lib
+
+lib: $(SLIB)
+client-lib: $(CLLIB)
+exe: $(EXE)
+
+$(CLLIB): 
+    $(AR) $(AR_FLAGS) $(CosQuery_CLIENT_OBJS)
+#
+$(SLIB): 
+    $(AR) $(AR_FLAGS) $(CosQuery_SERVER_OBJS)
+#
+$(EXE): $(CosQuery_src_OBJS) $(SLIB)
+   @echo AAA:  "$(GRAD_TOOLBOX_DIR)\lib" == "$(GRAD_CORBA_TOOLBOX_LIBDIR)"
+   $(LD) $(CosQuery_src_OBJS) $(LDFLAGS)
+
+
+install:
+    @if not exist $(INSTALL_BIN_DIR) mkdir $(INSTALL_BIN_DIR)
+    @for %i in ( $(INSTALL_EXE) ) do @if exist %i $(INSTALL_DATA) %i $(INSTALL_BIN_DIR)
+    @if not exist $(INSTALL_LIB_DIR) mkdir $(INSTALL_LIB_DIR)
+    @for %i in ( $(INSTALL_LIB) ) do @if exist %i $(INSTALL_DATA) %i $(INSTALL_LIB_DIR)
+
+install-client:
+    @if not exist $(INSTALL_LIB_DIR) mkdir $(INSTALL_LIB_DIR)
+    @for %i in ( $(INSTALL_CLLIB) ) do @if exist %i $(INSTALL_DATA) %i $(INSTALL_LIB_DIR)
+
+
+clean:
+    @for %i in ($(SUBDIRS)) do @cd $(PROJECT_ROOT)\src\%i && $(MAKE) /F Makefile.nt clean
+        @if exist *.obj $(RM) *.obj
+        @if exist *.lib $(RM) *.lib
+        @if exist *.exe $(RM) *.exe
+

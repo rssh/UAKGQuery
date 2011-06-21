@@ -1,0 +1,46 @@
+# $Id: Makefile.nt,v 1.10 2003-04-19 10:14:26 rssh Exp $
+
+include ..\env_inc.nt.mak
+include ..\config\ORB_description.nt.mak
+include ..\config\env_common.nt.mak
+
+default-build:
+install-client: install
+install: install-idl install-headers
+build:: build-client
+
+include mkidl.nt.mak
+
+IDLS=UAKGQuery2
+OBJS=$(CosQuery_idl_OBJS)
+
+generate:: $(CosQuery_generate_SRC)
+
+#   @for %j in ($(IDLS)) do \
+#       @$(IDL2CXX) $(INCLUDES) $(IDLFLAGS) %j.idl
+
+build-client:: $(OBJS)
+
+check_idl_dir: 
+    @if not exist $(INSTALL_IDL_DIR) mkdir $(INSTALL_IDL_DIR)
+
+check_inc_dir: 
+    @if not exist $(INSTALL_INC_DIR) mkdir $(INSTALL_INC_DIR)
+
+install-idl:: check_idl_dir
+    @for %i in ($(IDLS)) do \
+        @$(INSTALL_DATA) %i.idl $(INSTALL_IDL_DIR)
+
+clean::
+    @if exist *.h $(RM) *.h
+    @if exist *.cpp $(RM) *.cpp
+    @if exist *.obj $(RM) *.obj
+    @if exist *.cc $(RM) *.cc
+
+install-headers:: check_inc_dir
+    @for %j in ($(IDLS)) do \
+        @if exist %j.h $(INSTALL_DATA) %j.h $(INSTALL_INC_DIR) && \
+        if exist %j_skel.h $(INSTALL_DATA) %j_skel.h $(INSTALL_INC_DIR)
+doc:
+    cd $(ROOT_DIR)\idl
+    for %j in (*.idl) do hidl $(INCLUDES) --output-dir $(INSTALL_DIR)\htdocs\CosQuery %j

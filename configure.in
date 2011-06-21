@@ -1,0 +1,174 @@
+dnl configure.in for CosQuery.
+dnl part of ua.kiev.grad. framework.
+dnl (C) Ruslan Shevchenko <Ruslan@Shevchenko.Kiev.UA>, 1998 - 2008
+dnl (C) Grad-Soft Ltd, Kiev, Ukraine
+dnl $Id: configure.in,v 1.50 2008-05-31 18:17:06 rssh Exp $
+dnl
+dnl Process this file with autoconf to produce a configure script.
+
+AC_INIT(src/include/CosQueryPostConfig.h)
+AC_CONFIG_AUX_DIR(config)
+
+
+dnl check system type
+AC_CANONICAL_SYSTEM
+
+PACKAGE=UAKGQuery
+AC_SUBST(PACKAGE)
+VERSION=2.1.0
+AC_SUBST(VERSION)
+
+AM_ICONV
+INCLUDES="$INCLUDES $INCICONV"
+LIBS="$LIBS $LIBICONV"
+AM_WITH_MPATROL
+
+dnl
+dnl Checks for programs.
+dnl
+AC_CANONICAL_HOST
+AC_PROG_CC
+AC_PROG_CXX
+AC_PROG_CXXCPP
+AC_PROG_RANLIB
+AC_PROG_INSTALL
+AC_PROG_MAKE_SET
+
+RSSH_PROG_CXXAR
+RSSH_PROG_CXXLD
+
+
+RSSH_CHECK_SUNPRO_C
+RSSH_CHECK_SUNPRO_CC
+
+RSSH_RTTI
+RSSH_ENABLE_PTHREADS
+
+RSSH_CHECK_ORB
+RSSH_CHECK_OTS
+AC_ARG_WITH(ob-xa,[ob-xa : use ORBacus XA transaction mode],
+            AC_DEFINE(USE_OB_XA))
+
+
+dnl
+dnl check for C API
+dnl 
+
+AC_CHECK_HEADER(errno.h,AC_DEFINE(HAVE_ERRNO_H),)
+AC_CHECK_HEADER(sys/errno.h,AC_DEFINE(HAVE_SYS_ERRNO_H),)
+AC_CHECK_LIB(dl,dlopen,LIBS="-ldl $LIBS")
+AC_SUBST(LIBS)
+
+dnl
+dnl Check for byte order
+dnl
+
+AC_C_BIGENDIAN
+
+dnl
+dnl
+
+AC_CXX_BOOL
+AC_CXX_TYPENAME
+AC_CXX_NAMESPACES
+AC_CXX_MUTABLE
+
+RSSH_PIC_FLAG
+RSSH_CHECK_SHARED
+
+dnl
+dnl
+
+IDLFLAGS="$IDLFLAGS -I`pwd`/idl"
+AC_SUBST(IDLFLAGS,"$IDLFLAGS")
+INCLUDES="$INCLUDES $IDLFLAGS"
+
+dnl
+dnl Location of ORCALE
+dnl
+
+RSSH_CHECK_ORACLE
+if test $oracle = no
+then
+ AC_MSG_WARN(can not find Oracle database)
+else
+ AC_DEFINE(HAVE_ORACLE)
+fi
+RSSH_CHECK_INTERBASE
+if test $interbase = no
+then
+ AC_MSG_WARN(can not find Interbase/Firebird database)
+else
+ AC_DEFINE(HAVE_INTERBASE)
+fi
+
+if test $oracle = no -a $interbase = no
+then
+ AC_MSG_WARN(you can build only  client stub library)
+ AC_MSG_WARN(target client-stub-library in Makefile)
+fi
+
+RSSH_CHECK_STL
+RSSH_CHECK_IOSTREAMS
+#RSSH_CHECK_THREADING
+RSSH_CHECK_PROGOPTIONS
+RSSH_CHECK_SERVICEOPTIONS
+
+AC_LANG_SAVE
+AC_LANG_CPLUSPLUS
+AC_CHECK_HEADER(cstring,AC_DEFINE(HAVE_CSTRING))
+AC_LANG_RESTORE
+
+dnl
+dnl Check for CosTransactions service
+dnl
+AC_ARG_WITH(ob_xa,[ob_xa: must be set, if we use OB_XA transactions support],
+             use_ob_xa=yes, use_ob_xa=no)
+
+if test $use_ob_xa = yes
+then
+ use_ots=yes
+ AC_DEFINE(USE_OB_XA)
+ LIBS="-lOTS -lOBTransactions $LIBS"
+fi
+
+if test "x$use_ots" = xyes
+then
+ AC_DEFINE(CORBA_HAVE_OTS)
+ IDLFLAGS="$IDLFLAGS  -DCORBA_HAVE_OTS"
+ CXXFLAGS="$CXXFLAGS  -DCORBA_HAVE_OTS"
+ # this is for compiling generated sources
+fi
+
+dnl
+dnl define some helper Makefile.in variables.
+dnl
+COSQUERY_GEN_DIR=`pwd`/generated
+AC_SUBST(COSQUERY_GEN_DIR)
+
+CPPFLAGS="-I${COSQUERY_GEN_DIR} $CPPFLAGS"
+
+AC_SUBST(CPPFLAGS,$CPPFLAGS)
+
+PROJECT_ROOT=`pwd`
+project_root=$PROJECT_ROOT
+AC_SUBST(PROJECT_ROOT)
+AC_SUBST(project_root)
+
+dnl Checks for header files.
+AC_CONFIG_HEADER(src/include/CosQueryConfig.h)
+
+AC_CONFIG_SUBDIRS(tests/steps/)
+
+AC_OUTPUT(Makefile \
+          config/entry.mak \
+          docs/Makefile \
+          idl/Makefile \
+          src/Makefile \
+	  include/Makefile \
+          tests/Makefile \
+          ntests/Makefile \
+	  jlib/Makefile )
+
+
+

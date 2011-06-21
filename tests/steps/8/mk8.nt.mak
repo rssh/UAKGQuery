@@ -1,0 +1,10 @@
+STEP8_DIR=$(project_root)/8
+
+STEP8=$(TARGET_DIR)/STEP8.exe
+STEP8_OBJS=$(TARGET_DIR)/STEP8.obj $(TARGET_DIR)/printLib.obj
+
+$(TARGET_DIR)/STEP8.obj: $(STEP8_DIR)/STEP8.cpp
+        $(CXX) $(CXXFLAGS) -c $(STEP8_DIR)/STEP8.cpp
+
+$(TARGET_DIR)/STEP8.exe: $(STEP8_OBJS)
+        $(CXX) $(STEP8_OBJS) $(LIBS)

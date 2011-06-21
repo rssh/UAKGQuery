@@ -1,0 +1,19 @@
+# $Id: Makefile.nt,v 1.6 2003-03-13 13:30:10 rssh Exp $
+
+include ../env_inc.nt.mak
+include ../config/ORB_description.nt.mak
+include ../config/env_common.nt.mak
+
+
+SUBDIRS=steps DBFReader SQLTool
+
+default: build
+build-client: 
+default-build: build
+install:
+
+build:
+	@for %i in ($(SUBDIRS)) do @cd $(PROJECT_ROOT)\tests\%i && $(MAKE) /F Makefile.nt default
+
+clean:
+	@for %i in ($(SUBDIRS)) do @cd $(PROJECT_ROOT)\tests\%i && $(MAKE) /F Makefile.nt clean

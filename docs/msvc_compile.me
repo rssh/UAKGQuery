@@ -1,0 +1,34 @@
+1.Needed:
+
+a) Idl translator
+ all_gen_cpp_by_idl.bat (runable)
+ all_gen_cpp_by_idl_do.bat
+b) Makefile.nt.mak generator
+ generate.bat (runable)
+ generate_do1.bat
+ generate_do2.bat
+c) Utilits
+ cygwin1.dll
+ sed.exe
+d) Compiler
+ make.bat (runable)
+e) MSVC compiler (cl.exe, lib.exe, nmake.exe, etc.)
+
+2. Instructions:
+
+a) Use 'all_gen_cpp_by_idl.bat' or 'all_gen_cpp_by_idl.bat make'
+ to translate *.idl to *.cpp & *.h
+ - in all_gen_cpp_by_idl.bat set proper ROOT_DIR and IDLDIR (list of
+   idl dirs separated by spaces)
+ - in all_gen_cpp_by_idl_do.bat set proper OOC and COS (corresponding 
+   directories)
+b) Use generate.bat to generate Makefile.nt.mak
+ - in generate.bat set proper variables declared as 'set smth' in sections
+   'Main project properties', 'Lib paths' and 'Lib paths'
+c) Use 
+  'make' or 'make lib' to create xxxx.lib
+  'make client-lib' to create xxxxClient.lib
+  'make exe' to create xxxx.exe
+
+by Alik Rivkind <alik@grad.kiev.ua>
+$Id: msvc_compile.me,v 1.3 2000-02-11 15:03:52 alik Exp $

@@ -1,0 +1,2 @@
+
+Simple connect to query service and receive dbConnectionManager, then destroy it

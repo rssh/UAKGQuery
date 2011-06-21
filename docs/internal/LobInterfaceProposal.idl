@@ -1,0 +1,70 @@
+// LOB interface proposal by Alexander Yanovets [15.10.2001]
+
+exception ForReadingOnly {};
+exception ForWritingOnly {};
+
+interface Blob {
+
+    unsigned long length() raises(CosQuery::QueryProcessingError);
+
+    OctSeq fetch_chunk(in unsigned long chunkSize, out boolean more)
+            raises(CosQuery::QueryProcessingError, UAKGQuery::ForWritingOnly);
+
+    void put_chunk(in OctSeq data) raises(CosQuery::QueryProcessingError
+            , UAKGQuery::ForReadingOnly);
+
+};
+
+interface Clob {
+
+    unsigned long length() raises(CosQuery::QueryProcessingError);
+
+    string fetch_chunk(in unsigned long chunkSize, out boolean more)
+            raises(CosQuery::QueryProcessingError, UAKGQuery::ForWritingOnly);
+
+    void put_chunk(in string data) raises(CosQuery::QueryProcessingError
+            , UAKGQuery::ForReadingOnly);
+
+};
+
+interface Wclob {
+
+    unsigned long length() raises(CosQuery::QueryProcessingError);
+
+    wstring fetch_chunk(in unsigned long chunkSize, out boolean more)
+            raises(CosQuery::QueryProcessingError, UAKGQuery::ForWritingOnly);
+
+    void put_chunk(in wstring data) raises(CosQuery::QueryProcessingError
+            , UAKGQuery::ForReadingOnly);
+
+};
+
+interface Query {
+
+// Additional methods
+
+    Blob create_blob() raises(CosQuery::QueryProcessingError);
+
+    Clob create_clob() raises(CosQuery::QueryProcessingError);
+
+    Wclob create_wclob() raises(CosQuery::QueryProcessingError);
+
+};
+
+//
+// There should be clear mapping for long types of all supported databases.
+//
+
+union Value switch(FieldType) {
+    ///
+    case TypeRaw     : sequence<octet> raw;
+    /// 
+    case TypeWString  : wstring wstr;
+// Additional field types
+    ///
+    case TypeBlob     : Blob bl;
+    ///
+    case TypeClob  : Clob cl;
+    ///
+    case TypeWclob  : Wclob wcl;
+};

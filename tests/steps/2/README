@@ -1,0 +1,11 @@
+
+ 1. ReceiveConnectionManager.
+
+ 2. evaluate simple query without input bind variables.
+    2.1 using evaluate_rc
+    2.2 using evaluate_records
+    2.3 using evaluate_qr
+    2.4 using CosQuery::evaluate
+
+ 3. disconnect from db.
+

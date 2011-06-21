@@ -1,0 +1,19 @@
+# $Id: Makefile.nt,v 1.1 2003-06-19 10:01:11 qwerty Exp $
+
+include ../../env_inc.nt.mak
+include ../../config/ORB_description.nt.mak
+include ../../config/env_common.nt.mak
+
+
+SUBDIRS = lib 3based 
+
+default: build
+build-client: 
+default-build: build
+install:
+
+build:
+	@for %i in ($(SUBDIRS)) do @cd $(PROJECT_ROOT)\ntests\cpp\%i && $(MAKE) /F Makefile.nt default
+
+clean:
+	@for %i in ($(SUBDIRS)) do @cd $(PROJECT_ROOT)\ntests\cpp\%i && $(MAKE) /F Makefile.nt clean

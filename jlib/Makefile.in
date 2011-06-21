@@ -1,0 +1,43 @@
+#!/bin/sh
+#
+# Makefile.in
+# part of implementation of CORBA Query Service.
+# (C) Ruslan Shevchenko <Ruslan@Shevchenko.Kiev.UA>, 1998, 1999
+# (C) GradSoft 2001
+# $Id: Makefile.in,v 1.14 2001-04-17 08:09:09 rssh Exp $
+#
+PROJECT_ROOT=@project_root@
+include $(PROJECT_ROOT)/config/entry.mak
+#
+#
+
+default: build
+
+build-idl:
+#for i in $(IDL_DIR)/*.idl; do \
+# jidl $(JIDLFLAGS) $$i; \
+#done
+
+build: build-jar
+
+build-jar:
+# now nothing: we wil enable this after creation of java configuration
+#  infrastructure
+#build-jar: UAKGQueryClient.jar
+
+#UAKGQueryClient.jar: build-idl
+#	javac -classpath $(CLASSPATH) `find . -name *.java`
+#	jar -cvf UAKGQueryClient.jar `find . -name *.class`
+
+build-client-stub-library: 
+
+install:
+install-client-stub-library:
+install-client: install-client-stub-library
+
+clean: 
+obj-clean:
+
+uninstall:
+uninstall-client:
+

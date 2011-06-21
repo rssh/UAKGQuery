@@ -1,0 +1,10 @@
+STEP12_DIR=$(project_root)/12
+
+STEP12=$(TARGET_DIR)/STEP12.exe
+STEP12_OBJS=$(TARGET_DIR)/STEP12.obj $(TARGET_DIR)/printLib.obj
+
+$(TARGET_DIR)/STEP12.obj: $(STEP12_DIR)/STEP12.cpp
+        $(CXX) $(CXXFLAGS) -c $(STEP12_DIR)/STEP12.cpp
+
+$(TARGET_DIR)/STEP12.exe: $(STEP12_OBJS)
+        $(CXX) $(STEP12_OBJS) $(LIBS)   

@@ -1,0 +1,136 @@
+% This is a sample LaTeX document that uses cyrillic fonts.
+
+\documentclass[12pt]{article}
+\usepackage[OT2,OT1]{fontenc}
+\usepackage[koi8u]{inputenc}
+\usepackage{graphicx}
+\usepackage{verbatim}
+
+\title{ Decimal: Внутреннее представление и основные операции }
+
+% $Id: Decimal.tex,v 1.3 2001-03-15 12:37:29 rssh Exp $
+
+\begin{document}
+
+\maketitle{}
+
+\section{ Введение }
+
+ Тип Decimal предназначен для компактного представления чисел в десятичном
+ представлении. 
+
+\section{ Описание формата  }
+
+\begin{verbatim}
+ struct Decimal
+ {
+   short precision;
+   short scale;
+   Sequence<octet> value;
+ }
+\end{verbatim}
+
+ \begin{enumerate}
+  \item precision -- длинна значащей части в представлении c нулевой экспонентой
+  $$xxxx.yyyy$ 
+  (т. е. $length(xxxx)+$length(yyyy)$.
+  \item scale -- количество цифр после точки.  
+  \item value -- само значение числа.
+  Мы поддерживаем следуйщий формат представления:
+  \begin{enumerate}
+   \item exp -- десятичная экспонента, 1 знаковый байт.
+   \item sign -- знак числа, '+' или '-', 1 байт.
+   \item bcds -- массив десятичных чисел в BCD представлении.
+  \end{enumerate}  
+ \end{enumerate}
+
+ Пример:
+
+\begin{itemize}
+  \item 1234.555 precision=7, scale=3, value=bin(4)'+'bcd(1234555)
+  \item .0000012 precision=7, scale=7, value=bin(-5)'+'bcd(12)
+  \item .0 precision=0, scale=0, value=bin(0)'+' //
+\end{itemize}
+
+
+\section{ Основные операции:  }
+
+
+ \subsection{ вычисление precision и scale  }
+ 
+ Реализованно в \verb|DecimalWrapper|
+
+ Задача: преобразовать число вида
+   $$ .x_{1}x_{2}..x_{n} \times 10 ^ y $$
+ в вид:
+   $$ z_{1}z_{2}..z_{n} \times 10^0 $$
+ 
+ Пусть $n$ -- количество знаков, $s$-количество точек (scale), $p$ -- точность,
+
+\begin{verbatim}
+
+ s[0]=n;
+ p[0]=n;
+ y[0]=y
+
+ y=0 => закончено.
+
+ y>0 & s!=0 => s'=s-1, p'=p, y'=y-1 ( aaabbbEy -> aaab.bbEy-1 )
+ y>0 & s=0  -> s'=0, p'=p+1, y'=y-1 ( aaabbbEy -> aaabbbb0Ey-1 )
+  
+ y<0 => s'=s+1, p'=p+1, y'=y'+1
+
+ Итого, приходим:
+
+  y<0 => s=n-y; p=n=y
+  n>y>0 =>s=n-y,p=n 
+  y>n>0 => s=0, p=n-y
+
+\end{verbatim}
+
+
+ \subsection{ Перевод в base-100 }
+
+ Задача: преобразовать число вида
+
+ $$ .x_{1}x_{2}..x_{n} \times 10 ^ y $$
+
+ к виду
+
+ $$ (q_{1}q_{2})(q_{3}q_{4})..(q_{n-1}q_{n}) \times 100 ^ z $$
+
+ Где $(q_{1}q_{2})$ -- десятичные числа, разложение $x$ по степеням 100.
+
+ Алгоритм:
+ \begin{enumerate}
+  \item Произвести коррекцию экспоненты, если $y\bmod 2 = 1$
+    $$ .x_{1}x_{2}..x_{n} \times 10 ^ y = .0x_{1}x_{2}...x_n \times 10^ {y+1}$$
+  \item Произвести коррекцию длинны, если $n \bmod 2 = 1$
+    $$ .x_{1}x_{2}..x_{n}0 \times 10 ^ y = .x_{1}x_{2}...x_n \times 10^ {y}$$
+ \end{enumerate}
+
+ При этом:
+  \begin{itemize}
+    \item $y\bmod 2= 0, n\bmod 2=0$ -- никакого преобразования не надо.
+    \item $y\bmod 2= 0, n\bmod 2=1$ -- только второе преобразование.
+    \item $y\bmod 2= 1, n\bmod 2=0$ -- и первое, и второе.
+    \item $y\bmod 2= 1, n\bmod 2=1$ -- только первое.
+  \end{itemize}
+
+  Таким образом, получаем:
+
+ $$ x_{1}x_{2}..x_{n} \times 10 ^ y = \cases{
+     (x_{1}x_{2})(x_{3}x_{4}) .. (x_{n-1}x_n)  \times 100^{y/2} \,\,
+                                   n \bmod 2 = 0 \; y \bmod 2 = 0 \cr
+     (0x_{1})(x_{2}x_{3}) .. (x_n0)  \times 100^{y+1\over 2} \,\,
+                                 n \bmod 2 = 0 \; y \bmod 2 = 1 \cr
+     (x_{1}x_{2})(x_{3}x_{4}) .. (x_n0)  \times 100^{y\over 2} \,\,
+                                  n \bmod 2 = 1 \; y \bmod 2 = 0 \cr
+    (0x_{1})(x_{2}x_{3}) .. (x_{n-1}x_n) \times 100 ^ {y+1\over 2} \,\,
+                                   n \bmod 2 = 1 \;  y \bmod 2 = 1 \cr
+   }
+ $$
+                             
+
+
+\end{document}

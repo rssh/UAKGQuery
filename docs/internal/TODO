@@ -1,0 +1,18 @@
+
+
+insert second fields into DateTime in getAsString and setAsString
+
+switch to yayacc in parser
+
+FieldValueAccess:: add setrRaw and getRaw
+
+Think about checking of KEY UNIQUES from DB scheme
+
+(done)in UAKGCollection::outPatternWherePart add parameter "check for null",
+and set it to false in patterns, to true in records.
+
+
+Add to Programming guide notes or examples of work with raw-type.
+
+Add explanation what meaning length have in
+ RecordDescriptionAccess::appendString.

@@ -1,0 +1,59 @@
+# General make definitions and rules.
+#
+# part of grad Cos* build system
+#
+# (C) Ruslan Shevchenko <Ruslan@Shevchenko.Kiev.UA>, 1998
+# $Id: Makefile.in,v 1.33 2008-06-28 06:24:48 rssh Exp $
+#
+project_root=@project_root@
+
+
+CXX=@CXX@
+CPPFLAGS=-I$(project_root)/include -I$(project_root)/../../include -I$(project_root)/../../generated  @CPPFLAGS@  -I@prefix@/include
+# TODO: must-be $(GradSoft-include) instead @prefix@/incluse
+CXXFLAGS=$(CPPFLAGS) @DEFS@ @CXXFLAGS@
+INCLUDE=@INCLUDE@
+CXXCOMPILE=@CXX@ $(CXXFLAGS)
+
+LD=@LD@
+LDFLAGS=@LDFLAGS@
+LIBS=@LIBS@ -lProgOptions -lLogger -lThreading
+UAKGQUERY_CL_LIB=-lUAKGQuery2Client -lLogger -lThreading
+
+AR=@AR@
+ARFLAGS=@ARFLAGS@
+
+CXXLIBPREPARE=@CXXLIBPREPARE@
+
+
+default: build
+
+include 1/mk1.mak
+include 2/mk2.mak
+include 3/mk3.mak
+include 4/mk4.mak
+include 5/mk5.mak
+include 6/mk6.mak
+include 7/mk7.mak
+include 8/mk8.mak
+include 9/mk9.mak
+include 10/mk10.mak
+include 11/mk11.mak
+#include c1/cmk1.mak
+#include cc2/mkcc2.mak
+#include c3/mkc3.mak
+include ts/mkts.mak
+
+STEPS=$(STEP1) $(STEP2) $(STEP3) $(STEP4) $(STEP5) $(STEP6) $(CSTEP1) $(STEP7) $(STEP8)  $(STEP9) $(STEP10) $(STEP11)
+#CSTEPS=$(STEPCC1) $(STEPCC2) $(STEPCC3)
+CSTEPS=
+TSS=$(TS_27_06_2008)
+
+build: $(STEPS) $(CSTEPS) $(TSS)
+
+clean: 
+	-rm -f $(STEPS)
+	-rm -f $(TSS)
+	-rm -f */*.o
+	-rm -rf Templates.DB
+	-rm -f config.cache

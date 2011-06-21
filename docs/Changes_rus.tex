@@ -1,0 +1,157 @@
+\documentclass[10pt]{article}
+\usepackage[OT2,T2A]{fontenc}
+\usepackage[koi8-u]{inputenc}
+
+%\usepackage{html}
+
+
+\title{ UAKGQuery: Перечень версионных изменений \newline
+        \small{DocumentId:GradSof-UAKGQuery-r-ch-17.04.2001-1.0.4}
+      }
+
+\begin{document}
+
+\maketitle{}
+
+\tableofcontents
+
+\section{  Изменения в интерфейсных спецификациях }
+
+\begin{itemize}
+ \item 1.0.2 - 1.1.0 
+   \begin{itemize}
+     \item добавлена поддержка UNICODE строк.
+     \item добавлена поддержка для BLOB.
+     \item добавлен метод \verb|QueryManager::get_next_sequence_value|
+     \item добавлен метод \verb|QueryManager::get_property|
+   \end{itemize}
+ \item 1.0.1 - 1.0.2 
+   \begin{itemize}
+     \item добавлены опции командной строки, управляющие 
+            журналированием.
+     \item Изменен порядок инициализации: добавлена функция
+          библиотеки клиента: \verb|initUAKGQueryService|
+    \end{itemize}
+ \item 1.0.0 - 1.0.1 изменен IDL тег префикса.
+\end{itemize}
+
+\section{  Изменения в функциональных спецификациях }
+
+\begin{itemize}
+ \item 1.0.2 - 1.1.0 нет,
+ \item 1.0.0 - 1.0.2 добавлена опция для сохранения всех SQL выражений в 
+  лог-файле.
+ \item 1.0.0 - 1.0.1 отсуствуют.
+\end{itemize}
+
+\section{  Изменения реализационных характеристик }
+
+\begin{itemize}
+ \item 1.0.2 - 1.1.0 
+ \begin{itemize}
+   \item Добавлена поддержка InterBase-6.0 
+   \item Используется версия 1.4.0 GradSoft C++ ToolBox
+   \item Исправлены известные ошибки версии 1.0.2
+   \item Прекращена поддержка ORBacus-3.x и OmniORB-3.x
+ \end{itemize}
+
+ \item 1.0.1 - 1.0.2
+ \begin{itemize}
+   \item Совместим с версией 1.2.0 GradSoft C++ ToolBox.
+   \item Изменена схема сообщений об ошибках: сейчас используется Logger.
+   \item Убран вывод сообщения об ошибке инициализации, когда UAKGQueryService
+   запущен с опцией \verb|--help|.
+ \end{itemize}
+ \item 1.0.0 - 1.0.1
+ \begin{itemize}
+   \item Исправлена ошибка в RC-кодировании целых данных на машинах с
+ прямым порядком байт в слове.
+   \item В отсуствие текущей транзакции изменения фиксируются непосредственно
+  после выполнения SQL предложения в транзакционном режиме.
+  \item Небольшие изменения в Руководстве Программиста.
+  \item Исправлена ошибка в процессе инсталляции, когда включаемые файлы
+   GradSoft C++ ToolBox  находятся в директории, которая не указана как
+   источник включаемых файлоа для компилятора С++ по умолчанию.
+  \item Исправленна ошибка в "Руководстве Администратора" о порядке инсталляции
+    по Windows NT
+ \end{itemize}
+\end{itemize}
+
+\section{  Изменения в документации }
+
+\begin{itemize}
+ \item 1.0.2 - 1.1.0 \begin{enumerate}
+                     \item Руководство администратора: 
+                           \begin{enumerate}
+                           \item описание порядка инсталляции пакета под Windows NT 
+                                 приведено в соответствие с реальностью
+                           \item указано, что транзакции под Windows NT не поддерживаются
+                           \end{enumerate}
+                     \item Руководство программиста:
+                           \begin{enumerate}
+                           \item добавлен раздел о работе с большими объектами
+                           \item исправлены описания примеров, описано соответствие InterBase- и CORBA-типов данных
+                           \end{enumerate}
+                     \end{enumerate}
+ \item 1.0.1 - 1.0.2 - пересмотр.  
+ \item 1.0.0 - 1.0.1  
+ \begin{itemize}
+   \item Исправлено несколько грамматических ошибок.
+   \item Вычитан английский вариант.
+   \item "Перечень изменений" добавлен в комплект документации.
+ \end{itemize} 
+\end{itemize}
+
+\section{  Изменения в составе продукта }
+ 
+\begin{itemize}
+  \item 1.0.1 - 1.0.2 - нет.
+  \item 1.0.0 - 1.0.1
+  \begin{itemize}
+    \item Изменен состав документации.
+  \end{itemize}
+\end{itemize}
+
+\section{ Перечень внедренных или  опубликованных версий }
+
+ \begin{itemize}
+  \item 1.1.0
+  \begin{itemize}
+   \item начало поставок - 28.01.2002
+  \end{itemize}
+  \item 1.0.2
+  \begin{itemize}
+    \item начало поставок - 05.07.2001
+    \item прекращение поддержки - 01.03.2002
+    \item действия по поддержке зависящих программных комплексов:
+    \begin{itemize}
+     \item перекомпилируйте клиентские приложения с новыми библиотеками.
+    \end{itemize}
+  \end{itemize}
+  \item 1.0.1
+  \begin{itemize}
+    \item начало поставок - 07.05.2001
+    \item прекращение поддержки - 05.08.2001 
+    \item действия по поддержке зависящих программных комплексов:
+    \begin{itemize}
+      \item Обновите GradSoft C++ ToolBox до версии 1.2.0
+      \item В программах - клиентах UAKGQuery 
+       \begin{itemize}
+          \item после инициализации ORB вставьте вызов initUAKGQueryService 
+          \item можно убрать глобальную переменную  myORB.
+       \end{itemize}
+      \item перекомпилируйте клиентские приложения с новыми библиотеками.
+    \end{itemize}
+  \end{itemize}
+  \item 1.0.0
+  \begin{itemize}
+    \item начало поставок - 17.04.2001
+    \item прекращение поддержки - 10.05.2001 
+    \item действия по поддержке зависящих программных комплексов:
+      рекомпиляция приложений с новыми библиотеками.
+  \end{itemize}
+ \end{itemize}
+
+\end{document}
+
+

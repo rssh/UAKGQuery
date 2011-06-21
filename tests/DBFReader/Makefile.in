@@ -1,0 +1,56 @@
+# Generated automatically from Makefile.in by configure.
+#
+#
+# (C) Vladimir Jos <jos@grad.kiev.ua>, 2000
+# $Id: Makefile.in,v 1.17 2008-05-29 07:22:27 rssh Exp $
+#
+project_root=@project_root@
+
+CXX=@CXX@
+CPPFLAGS=@DEFS@ -I$(project_root)/include -I$(project_root)/../../src -I$(project_root)/../../include -I$(project_root)/src -I$(project_root)/../../generated @CPPFLAGS@  -I.
+CXXFLAGS=$(CPPFLAGS) @CXXFLAGS@
+INCLUDE=@INCLUDE@
+CXXCOMPILE=@CXX@ $(CXXFLAGS)
+
+LD=@LD@
+LDFLAGG=@LDFLAGS@
+LIBS=-L../../src -lUAKGQuery2Client -lLogger -lThreading @LIBS@
+
+AR=@AR@
+ARFLAGS=@ARFLAGS@
+
+CXXLIBPREPARE=$(CXX) $(CXXFLAGS)
+
+DBFREADER=DBFReader
+DBFREADER_OBJS=\
+        DBFHeader.o \
+        DBFforOracle.o \
+        DBFReader.o \
+	RecordSetFactory.o
+
+
+default:$(DBFREADER)
+
+all:$(DBFREADER)
+
+DBFReader: $(DBFREADER_OBJS)
+	$(CXX) $(CXXFLAGS) -o DBFReader $(DBFREADER_OBJS) $(LIBS)
+
+DBFReader.o: DBFReader.cpp
+	$(CXX) $(CXXFLAGS) -c DBFReader.cpp
+
+DBFHeader.o: DBFHeader.cpp
+	$(CXX) $(CXXFLAGS) -c DBFHeader.cpp
+
+DBFforOracle.o: DBFforOracle.cpp
+	$(CXX) $(CXXFLAGS) -c DBFforOracle.cpp
+
+RecordSetFactory: RecordSetFactory.cpp
+	$(CXX) $(CXXFLAGS) -c RecordSetFactory.cpp
+
+build: default
+
+clean:
+	-rm -f *.o
+	-rm -rf Templates.DB
+

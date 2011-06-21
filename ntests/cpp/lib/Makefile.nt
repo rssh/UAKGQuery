@@ -1,0 +1,16 @@
+# $Id: Makefile.nt,v 1.1 2003-06-19 08:11:56 qwerty Exp $
+
+
+include ../../../env_inc.nt.mak
+include ../../../config/ORB_description.nt.mak
+include ../../../config/env_common.nt.mak
+
+default: QueryApplication_lib
+
+include mkLib.nt.mak
+
+clean:
+        @if exist *.obj $(RM) *.obj
+        @if exist *.lib $(RM) *.lib
+        @if exist *.exe $(RM) *.exe
+

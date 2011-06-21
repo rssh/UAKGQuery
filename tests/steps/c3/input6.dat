@@ -1,0 +1,11 @@
+create
+*
+dummy
+
+
+delete_all
+add
+0
+filter
+
+quit

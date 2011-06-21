@@ -1,0 +1,11 @@
+
+
+build: CosQueryClient.jar
+
+build-classes:
+	javac `find ../jlib -name *.java`
+        javac `find . -name *.java`
+
+CosQueryClient.jar: build-classes
+	-rm -f CosQueryClient.jar
+	jar -cf CosQueryClient.jar `find . -name *.class`

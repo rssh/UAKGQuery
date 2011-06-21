@@ -1,0 +1,79 @@
+dnl configure.in for CosQuery.
+dnl part of ua.kiev.grad. framework.
+dnl (C) Ruslan Shevchenko <Ruslan@Shevchenko.Kiev.UA>, 1998, 1999
+dnl $Id: configure.in,v 1.15 2002-01-11 17:29:03 yad Exp $
+dnl
+dnl Process this file with autoconf to produce a configure script.
+
+AC_SUBST(PACKAGE, CosQuery)
+AC_SUBST(VERSION, 1.01)
+
+AC_INIT(include/QueryStepsPostConfig.h)
+AC_CONFIG_AUX_DIR(../../config)
+
+
+dnl check system type
+AC_CANONICAL_SYSTEM
+
+dnl
+dnl Checks for programs.
+dnl
+AC_CANONICAL_HOST
+AC_PROG_CC
+AC_PROG_CXX
+AC_PROG_CXXCPP
+AC_PROG_RANLIB
+AC_PROG_INSTALL
+AC_PROG_MAKE_SET
+
+RSSH_PROG_CXXAR
+RSSH_PROG_CXXLD
+
+RSSH_CHECK_SUNPRO_C
+RSSH_CHECK_SUNPRO_CC
+
+AC_CXX_BOOL
+AC_CXX_TYPENAME
+AC_CXX_NAMESPACES
+
+RSSH_CHECK_STL
+
+RSSH_ENABLE_PTHREADS
+RSSH_CHECK_PROGOPTIONS
+
+RSSH_CHECK_ORB
+RSSH_CHECK_IOSTREAMS
+
+dnl
+dnl Check for byte order
+dnl
+
+AC_C_BIGENDIAN
+
+dnl
+dnl define some helper Makefile.in variables.
+dnl
+COSQUERY_GEN_DIR=`pwd`/generated
+AC_SUBST(COSQUERY_GEN_DIR)
+
+CPPFLAGS="-I${COSQUERY_GEN_DIR} $CPPFLAGS"
+
+AC_SUBST(CPPFLAGS,$CPPFLAGS)
+
+PROJECT_ROOT=`pwd`
+project_root=$PROJECT_ROOT
+AC_SUBST(PROJECT_ROOT)
+AC_SUBST(project_root)
+
+dnl Checks for header files.
+AC_CONFIG_HEADER(include/QueryStepsConfig.h)
+
+
+LIBS="$LIBS"
+AC_CHECK_LIB(dl,dlopen,LIBS="-ldl $LIBS")
+AC_SUBST(LIBS,"$LIBS")
+
+AC_OUTPUT(Makefile \
+          ../SQLTool/Makefile \
+          ../DBFReader/Makefile 
+         )

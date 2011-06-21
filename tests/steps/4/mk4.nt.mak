@@ -1,0 +1,10 @@
+STEP4_DIR=$(project_root)/4
+
+STEP4=$(TARGET_DIR)/STEP4.exe
+STEP4_OBJS=$(TARGET_DIR)/STEP4.obj $(TARGET_DIR)/printLib.obj
+
+$(TARGET_DIR)/STEP4.obj: $(STEP4_DIR)/STEP4.cpp
+        $(CXX) $(CXXFLAGS) -c $(STEP4_DIR)/STEP4.cpp
+
+$(TARGET_DIR)/STEP4.exe: $(STEP4_OBJS)
+        $(CXX) $(STEP4_OBJS) $(LIBS)

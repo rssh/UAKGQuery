@@ -1,0 +1,179 @@
+
+!ifndef IDL_TARGET_DIR
+IDL_TARGET_DIR=$(MAKEDIR)
+!endif
+
+!if "$(ORB)"=="TAO"
+
+TARGET_ORB = RSSH_TAO
+
+IDLCXX = tao_idl 
+IDLFLAGS = -I$(TAO_ROOT)/orbsvcs/orbsvcs
+
+IDL_HAS_NO_TARGET_DIR = #
+
+IDL_CLN_H_SUFFIX = C.h
+IDL_CLN_H1_SUFFIX = C.i
+IDL_CLN_CPP_SUFFIX = C.cpp
+IDL_CLN_OBJ_SUFFIX = C.obj
+
+IDL_SRV_H_SUFFIX = S.h
+IDL_SRV_H1_SUFFIX = S.i 
+IDL_SRV_CPP_SUFFIX = S.cpp
+IDL_SRV_OBJ_SUFFIX = S.obj
+
+IDL_TIE_H_SUFFIX = S_T.h
+IDL_TIE_H1_SUFFIX = S_T.i
+IDL_TIE_CPP_SUFFIX = S_T.cpp
+
+IDL_ALL_CLN_HDR_SUFS=$(IDL_CLN_H_SUFFIX)
+IDL_ALL_CLN_OBJ_SUFS=$(IDL_CLN_OBJ_SUFFIX)
+IDL_ALL_SRV_OBJ_SUFS=$(IDL_CLN_OBJ_SUFFIX) $(IDL_SRV_OBJ_SUFFIX)
+
+IDL_ALL_CPP_SUFS=$(IDL_CLN_CPP_SUFFIX) $(IDL_SRV_CPP_SUFFIX)
+IDL_ALL_OBJ_SUFS=$(IDL_CLN_OBJ_SUFFIX) $(IDL_SRV_OBJ_SUFFIX)
+IDL_ALL_SRC_SUFS=$(IDL_CLN_H_SUFFIX) $(IDL_CLN_H1_SUFFIX) $(IDL_CLN_CPP_SUFFIX) $(IDL_SRV_H_SUFFIX) $(IDL_SRV_H1_SUFFIX) $(IDL_SRV_CPP_SUFFIX) $(IDL_TIE_H_SUFFIX) $(IDL_TIE_H1_SUFFIX) $(IDL_TIE_CPP_SUFFIX)
+
+IDL_ALL_SUFS = $(IDL_ALL_SRC_SUFS) $(IDL_ALL_OBJ_SUFS)
+
+IDL_LIBDIR = \
+ -libpath:"$(ACE_ROOT)/ace" \
+ -libpath:"$(TAO_ROOT)/tao" \
+ -libpath:"$(TAO_ROOT)/tao/PortableServer" \
+ -libpath:"$(TAO_ROOT)/tao/IORTable" \
+ -libpath:"$(TAO_ROOT)/orbsvcs/orbsvcs"
+
+ORB_LIBS=ace$(DEBUG_MARK).lib TAO$(DEBUG_MARK).lib TAO_PortableServer$(DEBUG_MARK).lib TAO_IORTable$(DEBUG_MARK).lib
+ORB_COSNAMING_LIB=TAO_CosNaming$(DEBUG_MARK).lib 
+
+ORB_INCLUDES = -I$(ACE_ROOT) -I$(TAO_ROOT) -I$(TAO_ROOT)/orbsvcs
+IDLCXXFLAGS = -MD$(DEBUG_MARK) -GX -GR -D "WIN32" $(ORB_INCLUDES)
+
+!else if "$(ORB)"=="OmniORB"
+
+
+!else if "$(ORB)"=="ORBacus"
+
+TARGET_ORB = ORBACUS
+
+IDLCXX = $(OOC_ROOT)\bin\idl -I$(OB_PREFIX)/idl -I$(OB_PREFIX)/idl/OB 
+IDLFLAGS = --output-dir $(IDL_TARGET_DIR) 
+
+!ifdef IDL_HAS_NO_TARGET_DIR
+!undef IDL_HAS_NO_TARGET_DIR
+!endif                                       
+ 
+IDL_CLN_H_SUFFIX = .h
+IDL_CLN_CPP_SUFFIX = .cpp
+IDL_CLN_OBJ_SUFFIX = .obj
+
+IDL_SRV_H_SUFFIX = _skel.h
+IDL_SRV_CPP_SUFFIX = _skel.cpp
+IDL_SRV_OBJ_SUFFIX = _skel.obj
+
+!ifdef IDL_CLN_H1_SUFFIX
+!undef IDL_CLN_H1_SUFFIX
+!endif
+!ifdef IDL_SRV_H1_SUFFIX
+!undef IDL_SRV_H1_SUFFIX
+!endif
+!ifdef IDL_TIE_H_SUFFIX
+!undef IDL_TIE_H_SUFFIX
+!endif
+!ifdef IDL_TIE_H1_SUFFIX
+!undef IDL_TIE_H1_SUFFIX
+!endif
+!ifdef IDL_TIE_CPP_SUFFIX
+!undef IDL_TIE_CPP_SUFFIX
+!endif
+
+IDL_ALL_CLN_HDR_SUFS=$(IDL_CLN_H_SUFFIX)
+IDL_ALL_CLN_OBJ_SUFS=$(IDL_CLN_OBJ_SUFFIX)
+IDL_ALL_SRV_OBJ_SUFS=$(IDL_CLN_OBJ_SUFFIX) $(IDL_SRV_OBJ_SUFFIX)
+
+IDL_ALL_CPP_SUFS=$(IDL_CLN_CPP_SUFFIX) $(IDL_SRV_CPP_SUFFIX)
+IDL_ALL_OBJ_SUFS=$(IDL_CLN_OBJ_SUFFIX) $(IDL_SRV_OBJ_SUFFIX)
+IDL_ALL_SRC_SUFS=$(IDL_CLN_H_SUFFIX) $(IDL_CLN_CPP_SUFFIX) $(IDL_SRV_H_SUFFIX) $(IDL_SRV_CPP_SUFFIX) 
+
+IDL_ALL_SUFS = $(IDL_ALL_SRC_SUFS) $(IDL_ALL_OBJ_SUFS)
+
+IDL_LIBDIR = -libpath:"$(OOC_ROOT)\lib"
+ORB_LIBS = ob.lib jtc.lib 
+ORB_COSNAMING_LIB = CosNaming.lib
+
+ORB_INCLUDES = -I$(OOC_ROOT)/include
+IDLCXXFLAGS = -GX -GR $(ORB_INCLUDES)
+
+!else if "$(ORB)" == "Mico"
+
+TARGET_ORB = MICO
+
+IDLCXX = $(MICO_ROOT)\win32-bin\idl 
+IDLFLAGS =  -I$(MICO_ROOT)\include
+
+!ifdef IDL_HAS_NO_TARGET_DIR
+!undef IDL_HAS_NO_TARGET_DIR
+!endif
+
+########################################### 
+# note user must not redefine these macros:
+
+IDL_CLN_H_SUFFIX = .h
+IDL_CLN_H1_SUFFIX = 
+IDL_CLN_CPP_SUFFIX = .cc
+IDL_CLN_OBJ_SUFFIX = .obj
+
+IDL_SRV_H_SUFFIX = .h
+IDL_SRV_H1_SUFFIX =  
+IDL_SRV_CPP_SUFFIX = .cc
+IDL_SRV_OBJ_SUFFIX = .obj
+
+!ifdef IDL_CLN_H1_SUFFIX
+!undef IDL_CLN_H1_SUFFIX
+!endif
+!ifdef IDL_SRV_H1_SUFFIX
+!undef IDL_SRV_H1_SUFFIX
+!endif
+!ifdef IDL_TIE_H_SUFFIX
+!undef IDL_TIE_H_SUFFIX
+!endif
+!ifdef IDL_TIE_H1_SUFFIX
+!undef IDL_TIE_H1_SUFFIX
+!endif
+!ifdef IDL_TIE_CPP_SUFFIX
+!undef IDL_TIE_CPP_SUFFIX
+!endif
+
+IDL_ALL_CLN_HDR_SUFS=.h
+IDL_ALL_CLN_OBJ_SUFS=.obj
+IDL_ALL_SRV_OBJ_SUFS=.obj
+
+IDL_ALL_CPP_SUFS=.cc
+IDL_ALL_OBJ_SUFS=.obj
+IDL_ALL_SRC_SUFS=.h .cc
+
+IDL_ALL_SUFS=.h .cc .obj
+#         
+###################################
+
+!ifdef PTHREADS_ROOT
+PTHREADS_LIBPATH=-libpath:"$(PTHREADS_ROOT)"
+!else
+PTHREADS_LIBPATH=
+!endif
+
+IDL_LIBDIR = -libpath:"$(MICO_ROOT)\win32-bin\lib" -libpath:"$(MICO_ROOT)\coss" $(PTHREADS_LIBPATH)
+ORB_LIBS = mico2311.lib idl2311.lib 
+#pthreadVC.lib 
+ORB_COSNAMING_LIB = micocoss2311.lib 
+PATH=$(MICO_ROOT)\win32-bin;$(PATH)
+#ORB_USE_DEBUG_LIB="true"
+
+ORB_INCLUDES = -I$(MICO_ROOT)\include  -I$(MICO_ROOT)\include\coss
+IDLCXXFLAGS = -D _WINDOWS $(ORB_INCLUDES)
+
+
+!else
+!error ORB is not defined
+!endif
+

@@ -1,0 +1,4 @@
+create_by_sql
+select abs(empno) from emp
+quit
+

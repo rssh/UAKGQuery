@@ -1,0 +1,11 @@
+create_key
+*
+uakgtest2
+
+
+f1
+get_records_with_keys
+2
+1
+2
+quit

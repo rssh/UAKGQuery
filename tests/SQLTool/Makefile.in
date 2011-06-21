@@ -1,0 +1,51 @@
+# General make definitions and rules.
+#
+# part of grad Cos* build system
+#
+# (C) Alik Rivkind <alik@Grad.Kiev.UA>, 2000
+# (C) Ruslan Shevchenko <Ruslan@Shevchenko.Kiev.UA>, 2000
+# $Id: Makefile.in,v 1.7 2008-05-29 07:22:27 rssh Exp $
+#
+project_root=@project_root@
+
+CXX=@CXX@
+CPPFLAGS=-I$(project_root)/include -I$(project_root)/../../include -I$(project_root)/../../src -I$(project_root)/src -I$(project_root)/../../generated @CPPFLAGS@ -I.
+CXXFLAGS=$(CPPFLAGS) @DEFS@ @CXXFLAGS@
+INCLUDE=@INCLUDE@
+CXXCOMPILE=@CXX@ $(CXXFLAGS)
+
+LD=@LD@
+LDFLAG=@LDFLAGS@
+LIBS=-L../../src -lUAKGQuery2Client -lLogger -lThreading @LIBS@ 
+
+AR=@AR@
+ARFLAGS=@ARFLAGS@
+
+CXXLIBPREPARE=@CXXLIBPREPARE@
+
+SQLTOOL=SQLTool
+SQLTOOL_OBJS=\
+        SQLTool.o \
+        SQLManager.o \
+        $(project_root)/../steps/3/printLib.o
+
+
+default:$(SQLTOOL)
+
+all:$(SQLTOOL)
+
+SQLTool: $(SQLTOOL_OBJS)
+	$(CXX) $(CXXFLAGS) -o SQLTool $(SQLTOOL_OBJS) $(LIBS) 
+
+SQLTool.o: SQLTool.cpp
+	$(CXX) $(CXXFLAGS) -c SQLTool.cpp
+
+SQLManager.o: SQLManager.cpp
+	$(CXX) $(CXXFLAGS) -c SQLManager.cpp
+
+build: default
+
+clean:
+	-rm -f *.o
+	-rm -rf Templates.DB
+

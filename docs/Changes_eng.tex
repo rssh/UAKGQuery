@@ -1,0 +1,150 @@
+\documentclass[10pt]{article}
+
+%\usepackage{html}
+
+
+\title{ UAKGQuery: List of changes \newline
+        \small{DocumentId:GradSof-UAKGQuery-eng-ch-17.04.2001-1C}
+      }
+
+\begin{document}
+
+\maketitle{}
+
+\tableofcontents
+
+\section{  Changes in interface specifications. }
+
+\begin{itemize}
+ \item 1.0.2 - 1.1.0 
+    \begin{itemize}
+       \item added support for wstring.
+       \item added support for binary large objects (BLOB-s)
+       \item added method \verb|QueryManger::get_next_sequence_value|
+       \item added method \verb|QueryManger::get_property|
+    \end{itemize}
+ \item 1.0.1 - 1.0.2 
+    \begin{itemize}
+      \item added logging command-line options.
+      \item Changed order of initialization: added client library function
+            \verb|initQueryService|
+     \end{itemize}
+ \item 1.0.0 - 1.0.1 IDL prefix tag is changed.
+\end{itemize}
+
+\section{  Changes of functional characteristics }
+
+\begin{itemize}
+ \item 1.0.2 - 1.1.0 none.
+ \item 1.0.1 - 1.0.2 optional logging of SQL statements is added.
+ \item 1.0.0 - 1.0.1 are absent.
+\end{itemize}
+
+\section{  Changes of implementation characteristics }
+
+\begin{itemize}
+ \item 1.0.2 - 1.1.0 
+ \begin{itemize}
+    \item Added support for InterBase back-end.
+    \item Use version 1.4.0 of GradSoft C++ ToolBox
+    \item Fixed known bugs of 1.0.2 version.
+    \item Support of Orbacus-3.x and OmniORB-3 is stopped.
+ \end{itemize}
+ \item 1.0.0 - 1.0.2
+ \begin{itemize}
+    \item Use version 1.2.0 of GradSoft C++ ToolBox.
+    \item Error reporting now use Logger.
+    \item Eliminated initialization exception output, 
+      when starting UAKQuweryService  with option \verb|--help|
+ \end{itemize}
+ \item 1.0.0 - 1.0.1 
+ \begin{itemize}
+    \item Fixed bug with incorrect marshalling of RCStream on machines
+        with big-emdian byte order.
+    \item non-transaction SQL sentences are commited immediatly after execution
+        with OTS-enabled mode.
+    \item review of ProgrammingGuide.
+    \item fixed bug in process of compilation, when GradSoft C++ ToolBox headers are situated outside of default C++ include directory.
+    \item fixed bug in description of installation process under Windows NT in Administration Guide.
+ \end{itemize}
+\end{itemize}
+
+\section{  Changes in documentation }
+
+\begin{itemize}
+ \item 1.0.2 - 1.1.0 \begin{enumerate}
+                     \item Administration guide:
+                           \begin{enumerate}
+                           \item description of installing procedure for Windows NT
+                                 made to be adequate
+                           \item pointed that transaction features for Windows NT are absent
+                           \end{enumerate}
+                     \item Programming guide:
+                           \begin{enumerate}
+                           \item routine of operating with LOB described
+                           \item examples code review, InterBase to CORBA type relations described
+                           \end{enumerate}
+                     \end{enumerate}
+ \item 1.0.0 - 1.0.2 - review
+ \item 1.0.0 - 1.0.1 
+ \begin{itemize}
+   \item Few grammar bugs fixed.
+   \item "List of changes" is added to documentation set.
+   \item Formal document tracking attributes is added to documentation.
+ \end{itemize} 
+\end{itemize}
+
+\section{  Changes in  distribution set }
+ 
+\begin{itemize}
+  \item 1.0.2 - 1.1.0 are absent
+  \item 1.0.1 - 1.0.2 are absent
+  \item 1.0.0 - 1.0.1 
+ \begin{itemize}
+   \item Documentation Set is changed.
+ \end{itemize} 
+\end{itemize}
+
+
+\section{ List of deployed or published versions }
+
+ \begin{itemize}
+  \item 1.1.0
+  \begin{itemize}
+   \item begin of supplement - 28.01.2002
+  \end{itemize}
+  \item 1.0.2
+  \begin{itemize}
+   \item begin of supplement - 05.07.2001
+   \item support discontinue - 01.03.2002 
+   \item actions, must performed for depended software support: 
+   \begin{itemize}
+     \item recompile client applications with new libraries.
+   \end{itemize}
+  \end{itemize}
+  \item 1.0.1
+  \begin{itemize}
+   \item begin of supplement - 07.05.2001
+   \item support discontinue - 05.08.2001 
+   \item actions, must performed for depended software support: 
+   \begin{itemize}
+     \item Upgrade you GradSoft C++ ToolBox to verion 1.2.0
+     \item In client applications:
+     \begin{itemize}
+       \item insert call of initUAKGQueryService after ORB initialization.
+       \item now if you do not use static global variable myORB, delete it.
+     \end{itemize}
+     \item recompile client applications with new libraries.
+   \end{itemize}
+  \end{itemize}
+  \item 1.0.0
+  \begin{itemize}
+   \item begin of supplement - 17.04.2001
+   \item support discontinue - 10.05.2001 
+   \item actions on dependent software support: are absent. All interfaces specifications are fully compatible.
+  \end{itemize}
+ \end{itemize}
+
+\end{document}
+
+

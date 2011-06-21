@@ -1,0 +1,879 @@
+#ifndef __UAKGQuery2_idl
+#define __UAKGQuery2_idl
+
+
+#pragma prefix "gradsoft.kiev.ua"
+
+/**
+ * UAKGQuery module
+ **/
+module UAKGQuery2 
+{
+
+    ///
+    exception QueryProcessingError 
+    { 
+        ///
+        string why; 
+        ///
+        unsigned long code;
+        ///
+        long dbCode;
+    };
+
+    ///
+    exception QueryFlagInvalid { 
+        string why;
+    };
+
+    ///
+    exception ReadOnlyLOB {};
+
+    ///
+    exception WriteOnlyLOB {};
+
+    ///
+    exception FieldIsNull {};
+
+    ///
+    exception InvalidFieldType {};
+
+    ///
+    exception FieldSizeIsNotSet {};
+
+    ///
+    exception InvalidRow {};
+    ///
+    exception InvalidColumn {};
+    ///
+    exception InvalidColumnName {};
+    ///
+    exception NameInUse {};
+    ///
+    exception InvalidInputFormat {};
+    ///
+    exception InvalidPrecision {};
+
+    ///
+    exception InvalidConversion {
+        /*
+        *   1 - overflow
+        *   2 - cannot convert to required type
+        */
+        short code;
+    };
+
+    /// 
+    enum QueryStatus 
+    {
+     ///
+     complete, 
+     ///
+     incomplete
+    };
+
+
+    typedef sequence<octet> OctSeq;
+    typedef sequence<string> StringSeq;
+
+    enum FieldType {
+        ///
+        TypeNull,
+        ///
+        TypeBoolean, 
+        ///
+        TypeChar, 
+        ///
+        TypeCharacter, 
+        ///
+        TypeOctet, 
+        ///
+        TypeShort,
+        ///
+        TypeUShort, 
+        ///
+        TypeSmallInt,
+        ///
+        TypeLong, 
+        ///
+        TypeULong, 
+        ///
+        TypeInteger, 
+        ///
+        TypeFloat, 
+        ///
+        TypeReal, 
+        ///
+        TypeDouble,
+        ///
+        TypeDoublePrecision,
+        ///
+        TypeString, 
+        ///
+        /// TypeObject,
+        ///
+        TypeDecimal,
+        ///
+        TypeNumeric,
+        ///
+        TypeDateTime,
+        ///
+        TypeRaw,
+        ///
+        TypeWString,
+        ///
+        TypeBlob,
+        ///
+        TypeClob,
+        ///
+        TypeWclob
+    };
+
+    valuetype Numeric {
+        /**
+         * precision of number.
+         **/
+        public long precision; 
+        /**
+         * scale of number
+         **/
+        public long scale; 
+        /**
+         * valus in BCD format.
+         **/
+        public sequence<octet> value;
+
+        /**
+         *@return string representation of decimal
+         **/ 
+        string getAsString();
+
+        /**
+         *
+         **/
+        void  setAsString(in string str) raises(InvalidInputFormat); 
+
+        /**
+         *
+         **/
+        long  getAsLong()  raises(InvalidConversion); 
+
+        /**
+         *
+         **/
+        void  setAsLong(in long l);
+
+        /**
+         *
+         **/
+        double  getAsDouble()  raises(InvalidConversion);
+
+        /**
+         *
+         **/
+        void  setAsDouble(in double d);
+
+        /**
+         * create with inital value 0
+         **/
+        factory  create();
+
+    };
+
+    /**
+     * type, corresponding to DATE field.
+     * (all values are start from 1)
+     **/
+    struct DateTime {
+        ///
+        short year;
+        ///
+        octet month;
+        ///
+        octet day;
+        ///
+        octet hour;
+        ///
+        octet minute;
+        ///
+        octet second;
+    };
+
+
+
+    /**
+     * Blob = "Binary Large Object"
+     **/
+    interface Blob {
+        ///
+        unsigned long length() raises(QueryProcessingError);
+        ///
+        OctSeq  fetch_chunk(in unsigned long chunkSize,
+                                      out boolean more)
+                raises(QueryProcessingError, WriteOnlyLOB);
+        ///
+        void put_chunk(in OctSeq data)
+                raises(QueryProcessingError, ReadOnlyLOB);
+
+        ///
+        void destroy();
+
+    };
+
+    /**
+     * Clob = "Char large object"
+     **/
+    interface Clob {
+
+        ///
+        unsigned long length() raises(QueryProcessingError);
+
+        ///
+        string fetch_chunk(in unsigned long chunkSize, out boolean more)
+                                raises(QueryProcessingError, WriteOnlyLOB);
+
+        ///
+        void put_chunk(in string data) 
+                                raises(QueryProcessingError, ReadOnlyLOB);
+
+        ///
+        void destroy();
+                
+
+    };
+
+    /**
+     * Wclob = "Wide character large object"
+     **/
+    interface Wclob {
+        ///
+        unsigned long length() raises(QueryProcessingError);
+        ///
+        wstring fetch_chunk(in unsigned long chunkSize, out boolean more)
+                raises(QueryProcessingError
+                , WriteOnlyLOB);
+        ///
+        void put_chunk(in wstring data) raises(QueryProcessingError
+                , ReadOnlyLOB);
+
+        ///
+        void destroy();
+
+    };
+
+
+    /**
+     * Record Set - valuetype, which hold set of records.
+     **/
+    custom valuetype RecordSet
+    {
+       ///
+       unsigned long getNRows();
+
+       ///
+       unsigned long getNColumns();
+
+       ///
+       void addRow();
+
+       ///
+       void addColumn(in string name, in FieldType ft) raises(NameInUse);
+
+       ///
+       string getColumnNameByIndex(in unsigned long col)
+                                         raises (InvalidColumn);
+
+       ///
+       unsigned long getColumnIndexByName(in string name)
+                                         raises (InvalidColumnName);
+
+       /**
+        * set size of field for variable-lenght types.
+        **/
+       void setFieldSizeAt(in unsigned long column, in unsigned long len)
+                                              raises (InvalidColumn,
+                                                   InvalidFieldType);
+
+       ///
+       FieldType  getFieldTypeAt(in unsigned long column)
+                                              raises (InvalidColumn,
+                                                      InvalidFieldType);
+
+       /// 
+       boolean haveFieldSizeAt(in unsigned long column)
+                           raises (InvalidColumn);
+
+       ///
+       unsigned long getFieldSizeAt(in unsigned long column)
+                                              raises (InvalidColumn,
+                              InvalidFieldType);
+
+       ///
+       boolean haveNumericFieldPropertiesAt(in unsigned long Column)
+                           raises (InvalidColumn);
+
+       ///
+       void setNumericFieldPropertiesAt(in unsigned long column,
+                                         in unsigned short precision,
+                                         in unsigned short scale) 
+                                                raises (InvalidColumn,
+                                                        InvalidFieldType,
+                            InvalidPrecision
+                            );
+
+       ///
+       unsigned short getNumericPrecisionAt(in unsigned long column)
+                                               raises (InvalidColumn,
+                                                       InvalidFieldType);
+
+       ///
+       unsigned short getNumericScaleAt(in unsigned long column)
+                                               raises (InvalidColumn,
+                                                       InvalidFieldType);
+
+       ///
+       void dropRow(in unsigned long row) raises (InvalidRow);
+
+       ///
+       void dropAllRows();
+
+       ///
+       void dropColumn(in unsigned long column) raises (InvalidColumn);
+
+       ///
+       void dropColumns(in unsigned long first, in unsigned long last)
+                                                        raises (InvalidColumn);
+
+       ///
+       void mergeColumns(in RecordSet rs) raises (NameInUse, InvalidRow);
+
+       ///
+       void appendRows(in RecordSet rs) raises (InvalidFieldType, InvalidColumn);
+
+
+       ///
+       boolean isNullAt(in unsigned long row, in unsigned long col)
+                                             raises (InvalidRow, InvalidColumn);
+
+       ///
+       void setNullAt(in unsigned long row, in unsigned long col)
+                                             raises (InvalidRow, InvalidColumn);
+
+       ///
+       boolean getBooleanAt(in unsigned long row, in unsigned long column) 
+                                            raises (InvalidRow, InvalidColumn,
+                                                    FieldIsNull,
+                                                    InvalidFieldType);
+
+       ///
+       void setBooleanAt(in unsigned long row, in unsigned long column,
+                         in boolean v) raises (InvalidRow, InvalidColumn,
+                                                InvalidFieldType);
+
+       ///
+       char getCharAt(in unsigned long row, in unsigned long column) 
+                                             raises (InvalidRow, 
+                                                     InvalidColumn,
+                                                     FieldIsNull,
+                                                     InvalidFieldType);
+
+       ///
+       void setCharAt(in unsigned long row, in unsigned long column, 
+                      in char v) 
+                                   raises (InvalidRow, InvalidColumn,
+                                                       InvalidFieldType);
+
+       ///
+       octet getOctetAt(in unsigned long row, in unsigned long col) 
+                                        raises (InvalidRow, InvalidColumn,
+                                                FieldIsNull, InvalidFieldType);
+                                                     
+
+       ///
+       void setOctetAt(in unsigned long row, in unsigned long col, in octet v) 
+                                         raises (InvalidRow, InvalidColumn,
+                                                 InvalidFieldType);
+
+       ///
+       short getShortAt(in unsigned long row, in unsigned long column) 
+                                         raises (InvalidRow, InvalidColumn,
+                                                 FieldIsNull,InvalidFieldType);
+                                                     
+
+       ///
+       void setShortAt(in unsigned long row, in unsigned long col, in short v)
+                                         raises (InvalidRow, InvalidColumn,
+                                                 InvalidFieldType);
+
+       ///
+       unsigned short getUShortAt(in unsigned long row, in unsigned long col) 
+                                         raises (InvalidRow, InvalidColumn,
+                                                 FieldIsNull, InvalidFieldType);
+                                                     
+
+       ///
+       void setUShortAt(in unsigned long row, in unsigned long column,
+                        in unsigned short v)
+                                        raises (InvalidRow, InvalidColumn,
+                                                InvalidFieldType);
+
+       ///
+       long getLongAt(in unsigned long row, in unsigned long column) 
+                                        raises (InvalidRow, InvalidColumn,
+                                                FieldIsNull, InvalidFieldType);
+                                                     
+       ///
+       void setLongAt(in unsigned long row, in unsigned long col, in long v)
+                                       raises (InvalidRow, InvalidColumn,
+                                               InvalidFieldType);
+
+       ///
+       unsigned long getULongAt(in unsigned long row, in unsigned long col) 
+                                        raises (InvalidRow, InvalidColumn,
+                                                FieldIsNull,InvalidFieldType);
+                                                    
+       ///
+       void setULongAt(in unsigned long row, in unsigned long column,
+                       in unsigned long v)
+                                         raises (InvalidRow, InvalidColumn,
+                                                 InvalidFieldType);
+
+       ///
+       float getFloatAt(in unsigned long row, in unsigned long column) 
+                                        raises (InvalidRow, InvalidColumn,
+                                                FieldIsNull, InvalidFieldType);
+                                                     
+
+
+       ///
+       void setFloatAt(in unsigned long row, in unsigned long col, in float v)
+                                        raises (InvalidRow, InvalidColumn,
+                                                InvalidFieldType);
+
+       ///
+       double getDoubleAt(in unsigned long row, in unsigned long column) 
+                                       raises (InvalidRow, InvalidColumn,
+                                               FieldIsNull, InvalidFieldType);
+                                                     
+       ///
+       void setDoubleAt(in unsigned long row, in unsigned long col, in double v)
+                                       raises (InvalidRow, InvalidColumn,
+                                               InvalidFieldType);
+
+       ///
+       string getStringAt(in unsigned long row, in unsigned long col) 
+                                   raises (InvalidRow, InvalidColumn,
+                                            FieldIsNull, InvalidFieldType);
+                                                     
+
+       ///
+       void setStringAt(in unsigned long row, in unsigned long col, in string v)
+                                      raises (InvalidRow, 
+                                              InvalidColumn,
+                                              FieldSizeIsNotSet,
+                                              InvalidFieldType);
+
+       ///
+       void setStringWithSizeAt(in unsigned long row, 
+                                in unsigned long col, 
+                                in string v)
+                                      raises (InvalidRow, InvalidColumn,
+                                              InvalidFieldType);
+
+
+
+       ///
+       Numeric getNumericAt(in unsigned long row, in unsigned long col) 
+                                     raises (InvalidRow, InvalidColumn,
+                                             FieldIsNull, InvalidFieldType);
+                                                     
+       ///
+       void setNumericAt(in unsigned long row, in unsigned long col,
+                         in Numeric v) 
+                                     raises (InvalidRow, InvalidColumn,
+                                             InvalidFieldType);
+
+       ///
+       DateTime getDateTimeAt(in unsigned long row, in unsigned long column) 
+                                             raises (InvalidRow, 
+                                                     InvalidColumn,
+                                                     FieldIsNull,
+                                                     InvalidFieldType);
+
+
+        ///
+        void setDateTimeAt(in unsigned long row, in unsigned long column,
+                           in DateTime v) 
+                            raises (InvalidRow, InvalidColumn,
+                                                         InvalidFieldType);
+
+        ///
+        OctSeq getRawAt(in unsigned long row, in unsigned long col) 
+                                     raises (InvalidRow, InvalidColumn,
+                                             FieldIsNull,InvalidFieldType);
+           
+        ///                                          
+        void setRawAt(in unsigned long row, in unsigned long column,
+                      in OctSeq v) raises (InvalidRow, InvalidColumn,
+                                                       InvalidFieldType);
+
+        /**
+         * pass OctetSequence by reference, not by copy.
+         * (to avoid copying of octet sequences in C++ mapping).
+         **/
+        void passRawAt(in unsigned long row, in unsigned long column,
+                       inout OctSeq v) raises (InvalidRow, InvalidColumn,
+                                                         InvalidFieldType);
+
+
+        ///
+        wstring getWStringAt(in unsigned long row, in unsigned long column) 
+                                         raises (InvalidRow, InvalidColumn,
+                                                 FieldIsNull, InvalidFieldType);
+                          
+        ///                           
+        void setWStringAt(in unsigned long row, 
+                          in unsigned long col,
+                          in wstring v) raises (InvalidRow, InvalidColumn,
+                                                FieldSizeIsNotSet, 
+                                                InvalidFieldType);
+
+        ///                           
+        void setWStringWithSizeAt(in unsigned long row, 
+                                  in unsigned long col,
+                                  in wstring v) 
+                                        raises (InvalidRow, InvalidColumn,
+                                                InvalidFieldType);
+
+
+        ///
+        Blob getBlobAt(in unsigned long row, in unsigned long column) 
+                                        raises (InvalidRow, InvalidColumn,
+                                                FieldIsNull,InvalidFieldType);
+           
+        ///                                           
+        void setBlobAt(in unsigned long row, in unsigned long column
+                          , in Blob v) raises (InvalidRow, InvalidColumn,
+                                                           InvalidFieldType);
+
+        ///
+        Clob getClobAt(in unsigned long row, in unsigned long col) 
+                                      raises (InvalidRow, InvalidColumn,
+                                              FieldIsNull,InvalidFieldType);
+           
+        ///                                         
+        void setClobAt(in unsigned long row, 
+                       in unsigned long col,
+                       in Clob v) raises (InvalidRow, InvalidColumn,
+                                                      InvalidFieldType);
+
+        Wclob getWclobAt(in unsigned long row, in unsigned long col) 
+                                             raises (InvalidRow, InvalidColumn
+                                                     , FieldIsNull
+                                                     , InvalidFieldType);
+
+        void setWclobAt(in unsigned long row, 
+                        in unsigned long col,
+                        in Wclob v) raises (InvalidRow, InvalidColumn
+                                                     , InvalidFieldType);
+
+        /**
+         * get value as string (in locale-specific encoding)
+         **/
+        string getAsStringAt(in unsigned long row, 
+                             in unsigned long column,
+                             in string nullValue)
+                                          raises (InvalidRow, InvalidColumn);
+
+        /*
+         * TODO: implement
+         * wstring getAsWStringAt(in unsigned long row, 
+         *                        in unsigned long column,
+         *                        in string nullValue)
+         *                                raises (InvalidRow, InvalidColumn);
+         */
+
+        factory create();
+        
+	///
+        void assign(in RecordSet rs);
+
+
+    };
+
+     
+    ///
+    exception QueryNotPrepared {};
+    ///
+    exception InvalidParameterName{};
+    ///
+    exception InvalidParameterType{};
+    ///
+    exception PropertyNotDefined{};
+
+
+   /**
+    * High level interface for evaluationg SQL queries
+    **/
+   interface QueryEvaluator
+                         //   :CosTransactions::TransactionalObject
+                         // obsoleted.
+   {
+
+     /**
+      * evaluate query <code> queryText </code> and return result
+      *@param queryText -- text of query
+      *@param queryFlags -- flags for query executing
+      *@param rs -- input parameters.
+      *@param params -- input parameters as RC-coded octet sequence
+      *@return result of query
+      **/
+     RecordSet evaluate(in string queryText, in string queryFlags,
+                        in RecordSet rs)
+              raises(QueryFlagInvalid, QueryProcessingError);
+
+     /**
+      * evaluate query <code> queryText </code> without parameters
+      * and return result
+      *@param queryText -- text of query
+      *@param queryFlags -- flags for query executing
+      *@return result of query
+      **/
+     RecordSet evaluate_e(in string queryText, in string queryFlags)
+              raises(QueryFlagInvalid, QueryProcessingError);
+
+     /**
+      * evaluate query <code> queryText </code>, fill out and inout 
+      * parameters of queury and return result
+      *@param queryText -- text of query
+      *@param queryFlags -- flags for query executing
+      *@param rs -- inout parameters.
+      *@param params -- input parameters as RC-coded octet sequence
+      *@return result of query
+      **/
+     RecordSet evaluate_inout(in string queryText, in string queryFlags,
+                        inout RecordSet rs)
+              raises(QueryFlagInvalid, QueryProcessingError);
+
+      /**
+       * get next sequence value for sequence with name 
+       *   <code> sequenceName </code>
+       **/
+      long  get_next_sequence_value(in string sequenceName)
+                        raises(QueryProcessingError, QueryFlagInvalid);
+
+
+   };
+
+
+
+   interface Query;
+   interface QueryManager;
+
+   /**
+    * this is interface for UAKG Query
+    * Query is SQL text with set of parameters: prepare parameters and 
+    * execute parameters.
+    *  prepare parameters are descriptions of appropriative execute parameters
+    *  execute parameters are SQL host valiables.
+    * i. e. let we have query (SELECT * from T where x=:x and y=:y);
+    * than prepare query have type RecordDescription and consist from
+    * FieldDescription of :x and :y.
+    * execute query are values of :x and :y (or sequence of pair of values
+    * for multiple evaluated query).
+    */
+   interface Query
+   {
+
+     /**
+      *@return owner of query
+      **/
+     readonly attribute QueryManager query_mgr;
+
+     /**
+      *@return text of query.
+      */
+     readonly attribute string  queryText;
+ 
+
+     /**
+      * return status of query: i.e: 
+      *  complete when query is executed, otherwise incomplete
+      */
+     QueryStatus get_status ();
+
+
+     /**
+      * prepare query for executing.
+      * if query have no parameters, paramsDescription must be empty 
+      * sequence.
+      */
+     void prepare_query(in RecordSet paramsDescription)
+                   raises(QueryProcessingError);
+
+     /**
+      * synonim for prepare_query 
+      **/
+     void prepare(in RecordSet paramsDescription)
+                   raises(QueryProcessingError);
+
+
+     /**
+      * execute query
+      *@params octSeq_  records of execute parameters
+      * (note, that prepare parameters is record description of execute
+      *  record).
+      **/
+     void execute(in RecordSet rs)
+                            raises(QueryProcessingError);
+
+     /**
+      * execute query with no parameters
+      **/
+     void execute_e() raises(QueryProcessingError);
+
+     /**
+      * execute query with inout parameters
+      *@params octSeq_  records of execute parameters
+      **/
+     void execute_inout(inout RecordSet rs)
+                            raises(QueryProcessingError);
+     
+
+     /**
+      * get description of records parameters
+      *@precondition
+      * must be called after prepare
+      **/
+     RecordSet  get_parameters_description()
+                               raises(QueryProcessingError);
+
+     ///
+     RecordSet get_all_parameters() 
+                               raises(QueryProcessingError);
+
+     ///
+     RecordSet get_parameters(in StringSeq parameterNames)
+                               raises(QueryProcessingError,
+                                      InvalidParameterName);
+
+     ///
+     RecordSet get_parameter(in string name)
+                               raises(QueryProcessingError,
+                                      InvalidParameterName);
+
+
+     /**
+      *@returns number of fetched rows.
+      */
+     unsigned long  get_row_count()
+                       raises(QueryProcessingError);
+
+     /**
+      * fetch query result in records.
+      * @param numberOfRecords -- number of records to fetch.
+      *        0 means, that we want to fetch all records.
+      * @param more -- true, if status is incomplete (i.e. we can query
+      * more results), otherwise false.
+      * @returns fetched rows packed in RC coding to octet sequence.
+      **/
+     RecordSet  fetch(in unsigned long numberOfRecords, out boolean more)
+                       raises(QueryProcessingError);
+
+     /**
+      * synonim for fetch_rc.
+      */
+     RecordSet  get_result(in unsigned long numberOfRecords, out boolean more)
+                       raises(QueryProcessingError);
+
+
+     /**
+      * skip N records without retrieving.
+      *@returns actual number of skipped records.
+      */
+     unsigned   long  skip(in unsigned long numberOfRecords,
+                           out boolean more)
+                       raises(QueryProcessingError);
+
+
+     /**
+      * request Blob for filling query parameters
+      *@returns empty Blob for writing only.
+      */
+     Blob create_blob() raises(QueryProcessingError);
+
+     /**
+      * request Clob for filling query parameters
+      *@returns empty Clob for writing only.
+      */
+     Clob create_clob() raises(QueryProcessingError);
+
+     /**
+      * request Wclob for filling query parameters
+      *@returns empty Wclob for writing only.
+      */
+     Wclob create_wclob() raises(QueryProcessingError);
+
+     /**
+      * destroy query, which no longer needed
+      **/
+     void        destroy();
+
+   };
+
+
+   /**
+    * interface for our QueryManager.
+    */
+   interface QueryManager: QueryEvaluator
+   {
+      ///
+      string get_username()  raises(QueryProcessingError);
+      ///
+      string get_dblink()  raises(QueryProcessingError);
+
+      ///
+      Query create_query(in string query, in string flags)
+                         raises(QueryFlagInvalid);
+
+      ///
+      Query create(in string query, in string flags)
+                         raises(QueryFlagInvalid);
+
+      ///
+      string get_property(in string property_name)
+                          raises(PropertyNotDefined);
+
+      
+      ///
+      void destroy();
+
+   };
+
+    ///
+    exception QueryManagerNotFound {};
+    
+    typedef sequence<QueryManager>  UAKGQueryManagerSeq;
+
+    ///
+    interface DBConnectionManager
+    {
+     ///
+     QueryManager create_query_manager(in string login, 
+                                       in string password, 
+                                       in string db_name, 
+                                       in string drv_name,
+                                       in string implementation_specific_data)
+                                     raises(QueryManagerNotFound,
+                                            QueryProcessingError);
+
+     /**
+      * shutdown query service.
+      **/
+     void shutdown();
+
+    };
+
+};
+
+#endif

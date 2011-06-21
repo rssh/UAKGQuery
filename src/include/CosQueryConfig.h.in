@@ -1,0 +1,253 @@
+
+/**
+ * part of GradSoft UAKGQuery
+ * (C) GradSoft, Kiev, Ukraine 1998 - 2008
+ * http://www.gradsoft.com.ua
+ * $Id: CosQueryConfig.h.in,v 1.26 2008-05-31 18:17:07 rssh Exp $
+ **/
+
+#ifndef HAVE_ERRNO_H
+#undef HAVE_ERRNO_H
+#endif
+
+#ifndef HAVE_SYS_ERRNO_H
+#undef HAVE_SYS_ERRNO_H
+#endif
+
+#ifndef HAVE_ICONV
+#undef HAVE_ICONV
+#endif
+
+#ifndef CORBA_H
+#undef CORBA_H
+#endif
+
+#ifndef CORBA_MODULE_NAMESPACE_MAPPING
+#undef CORBA_MODULE_NAMESPACE_MAPPING
+#endif
+
+#ifndef CORBA_MODULE_CLASS_MAPPING
+#undef CORBA_MODULE_CLASS_MAPPING
+#endif
+
+#ifndef CORBA_MODULE_C_MAPPING
+#undef CORBA_MODULE_C_MAPPING
+#endif
+
+#ifndef CORBA_HAVE_POA
+#undef CORBA_HAVE_POA
+#endif
+
+#ifndef CORBA_ORB_INIT_HAVE_3_ARGS
+#undef CORBA_ORB_INIT_HAVE_3_ARGS
+#endif
+
+#ifndef CORBA_ORB_INIT_THIRD_ARG
+#undef CORBA_ORB_INIT_THIRD_ARG
+#endif
+
+#ifndef CORBA_SYSTEM_EXCEPTION_IS_STREAMBLE
+#undef CORBA_SYSTEM_EXCEPTION_IS_STREAMBLE
+#endif
+
+#ifndef ORBACUS
+#undef ORBACUS
+#endif
+
+#ifndef OMNIORB
+#undef OMNIORB
+#endif
+
+#ifndef RSSH_TAO
+#undef RSSH_TAO
+#endif
+
+#ifndef TAO_HAVE_IORTABLE_ADAPTER
+#undef TAO_HAVE_IORTABLE_ADAPTER
+#endif
+
+#ifndef TAO_HAVE_PORTABLE_SERVER_H
+#undef TAO_HAVE_PORTABLE_SERVER_H
+#endif
+
+#ifndef MICO
+#undef MICO
+#endif
+
+#ifndef IDL_CLN_H_SUFFIX
+#undef IDL_CLN_H_SUFFIX
+#endif
+
+#ifndef IDL_CLN_H_BEFOREDOT_SUFFIX
+#undef IDL_CLN_H_BEFOREDOT_SUFFIX
+#endif
+
+#ifndef IDL_CLN_H_EXT
+#undef IDL_CLN_H_EXT
+#endif
+
+#ifndef IDL_SRV_H_SUFFIX
+#undef IDL_SRV_H_SUFFIX
+#endif
+
+#ifndef IDL_SRV_H_BEFOREDOT_SUFFIX
+#undef IDL_SRV_H_BEFOREDOT_SUFFIX
+#endif
+
+#ifndef IDL_SRV_H_EXT
+#undef IDL_SRV_H_EXT
+#endif
+
+#ifndef HAVE_NAMESPACE_STD
+#undef HAVE_NAMESPACE_STD
+#endif
+
+#ifndef HAVE_DEQUE
+#undef HAVE_DEQUE
+#endif
+
+#ifndef HAVE_DEQUE_H
+#undef HAVE_DEQUE_H
+#endif
+
+#ifndef HAVE_VECTOR
+#undef HAVE_VECTOR
+#endif
+
+#ifndef HAVE_VECTOR_H
+#undef HAVE_VECTOR_H
+#endif
+
+#ifndef HAVE_ALGO
+#undef HAVE_ALGO
+#endif
+
+#ifndef HAVE_ALGO_H
+#undef HAVE_ALGO_H
+#endif
+
+#ifndef HAVE_MAP
+#undef HAVE_MAP
+#endif
+
+#ifndef HAVE_MAP_H
+#undef HAVE_MAP_H
+#endif
+
+#ifndef HAVE_SET
+#undef HAVE_SET
+#endif
+
+#ifndef HAVE_SET_H
+#undef HAVE_SET_H
+#endif
+
+#ifndef HAVE_NAMESPACES
+#undef HAVE_NAMESPACES
+#endif
+
+#ifndef HAVE_BOOL
+#undef HAVE_BOOL
+#endif
+
+#ifndef HAVE_IOSTREAM
+#undef HAVE_IOSTREAM
+#endif
+
+#ifndef HAVE_IOSTREAM_H
+#undef HAVE_IOSTREAM_H
+#endif
+
+#ifndef HAVE_STRSTREAM
+#undef HAVE_STRSTREAM
+#endif
+
+#ifndef HAVE_STRSTREAM_H
+#undef HAVE_STRSTREAM_H
+#endif
+
+#ifndef HAVE_PTHREAD_H
+#undef HAVE_PTHREAD_H
+#endif
+
+#ifndef STREAMBUF_HAVE_PUBSEEKPOS
+#undef  STREAMBUF_HAVE_PUBSEEKPOS
+#endif
+
+#ifndef WORDS_BIGENDIAN
+#undef  WORDS_BIGENDIAN
+#endif
+
+#ifndef HAVE_PTHREAD_H
+#undef HAVE_PTHREAD_H
+#endif
+
+#ifndef __sparc__
+#undef __sparc__
+#endif
+
+#ifndef __sunos__
+#undef  __sunos__
+#endif
+
+#ifndef __OSVERSION__
+#undef  __OSVERSION__
+#endif
+
+#ifndef HAVE_TYPENAME
+#undef HAVE_TYPENAME
+#endif
+
+#ifndef HAVE_MUTABLE
+#undef HAVE_MUTABLE
+#endif
+
+#ifndef CORBA_HAVE_OTS
+#undef CORBA_HAVE_OTS
+#endif
+
+#ifndef CORBA_HAVE_XA_OTS
+#undef CORBA_HAVE_XA_OTS
+#endif
+
+#ifndef USE_OB_XA
+#ifdef CORBA_HAVE_XA_OTS
+#undef USE_OB_XA
+#endif
+#endif
+
+#ifndef OTSINIT
+#undef OTSINIT
+#endif
+
+
+/*
+ * db stuff
+ */
+
+#ifndef HAVE_ORACLE
+#undef HAVE_ORACLE
+#endif
+
+#ifndef HAVE_INTERBASE
+#undef HAVE_INTERBASE
+#endif
+
+#ifndef HAVE_CSTRING
+#undef HAVE_CSTRING
+#endif
+
+
+/*
+ * last touch
+ */
+
+#define CosQueryVersion  -1
+#define UAKGQueryVersion 205
+
+#ifdef WORD_BIGENDIAN
+#define RC_SWAP 1
+#endif
+
+
+

@@ -1,0 +1,70 @@
+#!/bin/sh
+#
+# Makefile.in
+# part of implementation of CORBA Query Service.
+# (C) Ruslan Shevchenko <Ruslan@Shevchenko.Kiev.UA>, 1998, 1999
+# $Id: Makefile.in,v 1.19 2004-03-09 14:23:07 rin Exp $
+#
+PROJECT_ROOT=@project_root@
+include $(PROJECT_ROOT)/config/entry.mak
+#
+SUBDIRS=idl include src tests ntests
+CONFIG_SUBDIRS=tests/steps
+#
+
+default: generated build client
+
+client: client-stub-library
+client-stub-library: generated build-client-stub-library
+
+mkCosQueryGen.mak:
+	$(IDL_DEPEND_FOR_COSQUERY)  > mkCosQueryGen.mak
+
+generated: $(GENERATED_DIRS)
+
+$(GENERATED_DIRS):
+	for i in $(GENERATED_DIRS); do \
+	  if test ! -d $$i; then mkdir $$i; fi; \
+	done
+
+include mkCosQueryGen.mak
+
+build-generated: $(IDL_COSQUERY_ALL) 
+
+build: build-generated
+	for i in $(SUBDIRS); do (cd $$i; $(MAKE) build) ; done	
+
+build-client-stub-library: build-generated
+	for i in $(SUBDIRS); do (cd $$i; $(MAKE) build-client-stub-library) ; done	
+
+install: build
+	for i in $(SUBDIRS); do (cd $$i; $(MAKE) install) ; done
+
+install-client-stub-library: build-client-stub-library
+	for i in $(SUBDIRS); do (cd $$i; $(MAKE) install-client-stub-library) ; done
+
+uninstall:
+	for i in $(SUBDIRS); do (cd $$i; $(MAKE) uninstall) ; done
+
+uninstall-client:
+	for i in $(SUBDIRS); do (cd $$i; $(MAKE) uninstall-client) ; done
+
+clean: obj-clean
+	-rm -rf *.cache
+	-rm -rf generated
+	-rm -f mkCosQueryGen.mak 
+
+obj-clean:
+	for i in $(SUBDIRS); do (cd $$i; $(MAKE) obj-clean) ; done	
+	-rm -rf Templates.DB
+
+reconfigure:
+	rm -rf *.cache
+	autoconf -I config
+	for i in $(CONFIG_SUBDIRS); do (cd $$i; autoconf -I $(PROJECT_ROOT)/config ); done
+
+
+distributive: 
+	(cd ..; tar -cvzf UAKGQuery-@VERSION@.tar.gz `cat CosQuery.1/FLIST`)
+	(cd ..; zip -v UAKGQuery-@VERSION@.zip `cat CosQuery.1/FLIST`)
+

@@ -1,0 +1,1 @@
+step6.exe -ORBconfig e:\etc\orb.cf

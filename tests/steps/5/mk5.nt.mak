@@ -1,0 +1,10 @@
+STEP5_DIR=$(project_root)/5
+
+STEP5=$(TARGET_DIR)/STEP5.exe
+STEP5_OBJS=$(TARGET_DIR)/STEP5.obj $(TARGET_DIR)/printLib.obj
+
+$(TARGET_DIR)/STEP5.obj: $(STEP5_DIR)/STEP5.cpp
+        $(CXX) $(CXXFLAGS) -c $(STEP5_DIR)/STEP5.cpp
+
+$(TARGET_DIR)/STEP5.exe: $(STEP5_OBJS)
+        $(CXX) $(STEP5_OBJS) $(LIBS)

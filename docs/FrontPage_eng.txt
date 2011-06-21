@@ -1,0 +1,58 @@
+
+
+
+  UAKGQQuery is a CORBA service for database access, which provide
+ effecient high-level model of integration CORBA application with data 
+ source.
+
+
+  Historically, UAKGQuery grew [?] from initial implementation of
+ CORBA Query Service, developed by authors in 1998. Then architecture
+ of service was significally changed, after analysys of
+ common service usage scenarios, centered on performance and 
+ convinience of programming. In result we release new product with
+ new name and new functionality. The results of research are particularly
+ summarized in next
+  <A href="http://www.gradsoft.com.ua/rus/whitepapers/UKRPROG2000/article.html">
+ article 
+  </A>.
+
+  The work of UAKGQuery is:
+
+   -  to provide universal CORBA API for database access
+   -  integrate database transactions into CORBA distributed transaction model.
+
+
+ Supported platforms:
+
+  Database server - Oracle. InterBase support will be integrated in next
+version of UAKGQuery.
+
+  Operation system on server side: Sun Solaris, Linux, Windows NT (porting
+ to any posix compatible system is possible).
+  Operation system on client side: Sun Solaris, Linux, Windows NT, Windows 95,
+ FreeNSD (porting to any posix compatible system is possible)
+
+  ORB: OmniORB-3.0, ORBacus-4.03, TAO-5.1
+
+  Transactions are supported, when ORBacus and ORBacus OTS are used.
+
+  Documentation Set:
+
+   UAKGQuery: general description
+   // rus/eng, как везде
+     [GeneralDescription_rus/index.html, GeneralDescription_rus.pdf]
+     [GeneralDescription_eng/index.html, GeneralDescription_eng.pdf]
+
+   UAKGQuery: administration guide
+   // rus/eng, как везде
+        AdministrationGuide_rus/index.html]
+
+   UAKGQuery: Programming Guide.
+   // rus/eng, как везде
+        ProgrammingGuide_rus/index.html]
+
+   UAKGQuery: API Description.
+        ProgrammingGuide_rus/index.html]
+
+

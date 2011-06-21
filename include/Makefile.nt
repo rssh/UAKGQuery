@@ -1,0 +1,25 @@
+# $Id: Makefile.nt,v 1.7 2003-03-18 13:05:20 kav Exp $
+
+include ..\env_inc.nt.mak
+include ..\config\env_common.nt.mak
+
+CosQuery_INSTALL=\
+	CosQuery2Server.h \
+	UAKGQuery2Init.h 
+CosQuery_client_INSTALL=\
+	UAKGQuery2Init.h 
+
+
+check_lib_dir:
+	@if not exist $(INSTALL_INC_DIR)\$(DIR) mkdir $(INSTALL_INC_DIR)\$(DIR)
+
+
+install: install-local 
+
+install-local: check_lib_dir
+	@for %i in ( $(CosQuery_INSTALL) ) do \
+		@$(INSTALL_DATA) %i $(INSTALL_INC_DIR)\$(DIR)
+
+install-client: check_lib_dir
+	@for %i in ( $(CosQuery_client_INSTALL) ) do \
+		@$(INSTALL_DATA) %i $(INSTALL_INC_DIR)\$(DIR)

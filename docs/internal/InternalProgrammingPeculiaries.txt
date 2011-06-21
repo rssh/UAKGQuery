@@ -1,0 +1,4 @@
+
+
+1. Do not throw QueryProcessingError directly, use
+  UAKGQueryBase::throwQueryProcessingError otherwise.

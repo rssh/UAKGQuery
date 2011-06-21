@@ -1,0 +1,10 @@
+STEP6_DIR=$(project_root)/6
+
+STEP6=$(TARGET_DIR)/STEP6.exe
+STEP6_OBJS=$(TARGET_DIR)/STEP6.obj $(TARGET_DIR)/printLib.obj
+
+$(TARGET_DIR)/STEP6.obj: $(STEP6_DIR)/STEP6.cpp
+        $(CXX) $(CXXFLAGS) -c $(STEP6_DIR)/STEP6.cpp
+
+$(TARGET_DIR)/STEP6.exe: $(STEP6_OBJS)
+        $(CXX) $(STEP6_OBJS) $(LIBS)

@@ -1,0 +1,8 @@
+create_key
+*
+item_date
+mdate > to_date('10.23.00')
+mdate desc
+mdate
+get_readonly
+quit

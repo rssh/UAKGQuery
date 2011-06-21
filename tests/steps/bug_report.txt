@@ -1,0 +1,23 @@
+1.  с5.срр  не выполняется evaluate_records, если длина передаваемой RecordSeq >1
+
+2.  c6.cpp падает UAKGQueryService если описание параметров не соответствует параметрам
+
+3.  select не поддерживает тип Oracle::long (insert работает) можно проверить 
+    с помощью с4.cpp
+ 
+Blob:
+1. NT:
+  1.1. Oracle8:
+      1.1.1 fetch_Blob(chunk_size, more) 
+		   - UAKGQuery всегда решвет что он прочитал весь Blob (вне зввисимости 
+			от chunk_size), поэтому more - всегда возвращает false и все
+			прочитанные кусочки при любом количестве обращений получаются одинаковыми
+  1.2. Interbase:
+      1.2.1 fetch_Blob(chunk_size, more):
+           - chunk_size = 0 - more - всегда возвращает true, 
+			из-за чего при повторном обращении бросает exception 
+			QueryProcessingError: attempted retrieval of more segments than exist
+			после начинает нормально с InterBase не работает
+		   - chunk_size > 0 (1000) - 
+			QueryProcessingError: segment buffer length shorter than expected
+			после начинает нормально с InterBase не работает

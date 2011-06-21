@@ -1,0 +1,87 @@
+dnl configure.in for CosQuery.
+dnl part of ua.kiev.grad. framework.
+dnl (C) Ruslan Shevchenko <Ruslan@Shevchenko.Kiev.UA>, 1998, 1999
+dnl $Id: configure.in,v 1.1 2000-02-21 07:30:44 rssh Exp $
+dnl
+dnl Process this file with autoconf to produce a configure script.
+
+AC_SUBST(PACKAGE, CosQueryPerformaceTest)
+AC_SUBST(VERSION, 1.01)
+
+AC_INIT(perf1.cpp)
+AC_CONFIG_AUX_DIR(../../config)
+
+
+dnl check system type
+AC_CANONICAL_SYSTEM
+
+dnl
+dnl Checks for programs.
+dnl
+AC_CANONICAL_HOST
+AC_PROG_CC
+AC_PROG_CXX
+AC_PROG_CXXCPP
+AC_PROG_RANLIB
+AC_PROG_INSTALL
+AC_PROG_MAKE_SET
+
+RSSH_PROG_CXXAR
+RSSH_PROG_CXXLD
+
+
+RSSH_CHECK_SUNPRO_C
+RSSH_CHECK_SUNPRO_CC
+
+RSSH_SOLARIS_THREADSAFE_FLAG_VAR
+RSSH_CHECK_RTTI
+
+RSSH_CHECK_JTC
+RSSH_CHECK_ORBACUS
+
+dnl 
+dnl Location of IDL files from OB:
+dnl
+
+AC_ARG_WITH(idl-ob-location, location of OB idl's (default: /usr/local/include/OB), \
+     IDL_OB_LOCATION=${idl_ob_location},
+     IDL_OB_LOCATION=/usr/local/include/OB )
+
+if test -f $IDL_OB_LOCATION/IntRep.idl
+then
+  echo OB IDL dir found: $IDL_OB_LOCATION
+else
+  AC_MSG_ERROR(ORB IDL-s (IntRep.idl) not found!)
+fi
+
+dnl special hook for IntMember.h, which situated in OB directory.
+CPPFLAGS="$CPPFLAGS -I${IDL_OB_LOCATION}"
+
+IDLFLAGS="-I$IDL_OB_LOCATION/.. -I$IDL_OB_LOCATION -I`pwd`/idl"
+AC_SUBST(IDLFLAGS,"$IDLFLAGS")
+INCLUDES="$INCLUDES $IDLFLAGS"
+
+dnl
+dnl define some helper Makefile.in variables.
+dnl
+COSQUERY_GEN_DIR=`pwd`/generated
+AC_SUBST(COSQUERY_GEN_DIR)
+
+CPPFLAGS="-I${COSQUERY_GEN_DIR} $CPPFLAGS"
+
+AC_SUBST(CPPFLAGS,$CPPFLAGS)
+
+PROJECT_ROOT=`pwd`
+project_root=$PROJECT_ROOT
+AC_SUBST(PROJECT_ROOT)
+AC_SUBST(project_root)
+
+dnl Checks for header files.
+dnl AC_CONFIG_HEADER(include/QueryStepsConfig.h)
+
+
+LIBS="$LIBS"
+AC_SUBST(LIBS,"$LIBS")
+
+AC_OUTPUT(Makefile \
+         )

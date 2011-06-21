@@ -1,0 +1,602 @@
+
+% $Id: CollectionsProgrammingGuide_rus.tex,v 1.20 2001-07-05 13:15:54 yulp Exp $
+
+\subsection{ Введение }
+
+AKGQueryCollection (коллекции) -- это семейство интрефейсов, представляющих высокоуровневую
+объектную модель, предназначенную для работы с множествами данных в БД.
+
+Коллекции позволяют избавиться от рутинного программирования при работе с таблицами,
+предоставляя объекты более высокого уровня,
+которые реализуют необходимые механизмы управления данными,
+скрывая детали реализации от программиста.
+
+
+\subsection{ Общее описание механизма работы }
+
+
+\subsubsection{ "Физический смысл" коллекции }
+
+  В сухом остатке коллекцию можно рассматривать как специфицированный набор SQL предложений для чтения,
+записи и модификации данных, каждое из которых связано с одним из методов объекта.
+
+  Например, в простейшем случае, для чтения данных из однойтаблицы мы, очевидно,
+должны воспользоваться SQL-предложением следующего типа:
+\begin{verbatim}
+ SELECT <select-part> FROM <from-part> WHERE <where-part> 
+\end{verbatim}
+  На практике для этого мы можем создать коллекцию, которая будет специфицирована SELECT, FROM
+  и WHERE частью данного предложения, после чего использовать методы коллекции, например метод
+  \verb|retrieve_by_filter| с параметром \verb|<filter>|, который будет эквивалентен SQL-предложению
+\begin{verbatim}
+ SELECT <select-part> FROM <from-part> WHERE <where-part> AND <filter>
+\end{verbatim}
+  Если потом мы захотим можифицировать считанные данные, мы сможем использовать метод \verb|update_by_filter|
+  той же коллекции, который будет эквивалентен SQL-предложению
+
+\begin{verbatim}
+ UPDATE <from-part> SET <set-part> WHERE <where-part> AND <filter>
+\end{verbatim}
+
+ где SET часть автоматически построена на основании SELECT части спецификации коллекции. \\
+
+ Таким образом, на более общем уровне коллекция выступает как комплексный механизм управления
+ данными, ограниченный следующими вещами:
+ \begin{enumerate}
+   \item Набором полей данных (SELECT часть SQL предложения)
+   \item Источником данных (FROM часть SQL предложения)
+   \item Уcловиями выбора (WHERE часть SQL предложения)
+   \item Принципом упорядочивания данных (ORDER-BY часть SQL предложения)
+ \end{enumerate}
+ Все эти вещи должны быть заданы на этапе создания объекта.
+
+\subsubsection{ Порядок работы с коллекцией }
+
+ Порядок работы с UAKGQueryCollection выглядит так:
+ \begin{enumerate}
+   \item Создать коллекцию, воспользоваовшись одним из методов QueryManager.
+   \item Пользуясь методами коллекции либо (а) сразу выполнить необходимое 
+         преобразование над данными, либо (б) получить объект \verb|Iterator|
+         для последовательного чтения данных и воспользоваться им.
+   \item В конце работы уничтожить UAKGCollection, вызвав метод destroy.
+ \end{enumerate}
+
+
+\subsection{ Создание Query Collections}
+
+UAKGQuery предоставляет два типа коллекций: UAKGCollection и UAKGKeyCollection. 
+UAKGCollection соответствует "простому" набору данных, UAKGKeyCollection - набору
+данных с ключом.
+\newline
+\newline
+Существует два сопособа создания UAKGCollection:
+
+\begin{enumerate}
+  \item создание по заданным полям
+  \item создание по заданному SQL предложению
+\end{enumerate}
+
+К примеру, объект UAKGCollection можно создать так:
+
+\begin{verbatim}
+ UAKGCollection_var collection = queryManager->create_collection_by_parts(
+                                            "F1,F2", "UAKGTEST", "F1=1", "F2");
+\end{verbatim}
+
+или так:
+
+\begin{verbatim}
+ UAKGCollection_var collection = queryManager->create_collection_by_query(
+                          "select F1,F2 from UAKGTEST where F1=1 order by F2");
+\end{verbatim}
+
+По сути, приведенные участки кода эквивалентны друг другу.
+
+Отметим, что параметры первого вызова суть:
+ \begin{enumerate}
+   \item "F1,F2" -- набор полей ( SELECT часть SQL предложения );
+   \item "UAKGTEST" -- источник данных ( FROM часть SQL предложения );
+   \item "F1=1" -- условие выборки ( WHERE часть SQL предложения );
+   \item "F2" -- параметр упорядочивания (необязательный) : ORDER часть.
+ \end{enumerate}
+
+
+\subsection{ Доступ к данным }
+
+\subsubsection{ Получение данных при помощи методов объекта Iterator }
+
+Удобный способ доступа к данным UAKGCollection (например, к результатам запроса) 
+предоставляется объектом \verb|Iterator|. \\
+
+Общая процедура работы с итератором такова:
+
+ \begin{enumerate}
+  \item Получить объект \verb|Iterator|
+  \item Получать записи при помощи методов объекта 
+  \item Удалить объект \verb|Iterator|
+ \end{enumerate}
+
+Пример использования объекта \verb|Iterator|:
+
+\begin{verbatim}
+ UAKGIterator_var iterator = collection->create_uakgiterator();
+ Boolean more = true;
+ while( more )
+ { 
+   OctSeq_var octSeq = iterator->fetch_rc(50, more);
+   printRC( octSeq );
+ }
+ iterator->destroy();
+\end{verbatim}
+
+Методы объекта \verb|Iterator|:
+
+ \begin{itemize}
+   \item \verb|fetch_rc( ULong n, Boolean& more )|
+     Читает \verb|n| записей и возвращает их как поток байт в RC кодировке.
+   \item \verb|fetch_records( ULong n, Boolean& more )|
+     Читает \verb|n| записей и возвращает их как последовательность строк.
+   \item \verb|skip( ULong n, Boolean& more )|
+     Пропускает \verb|n| записей.
+ \end{itemize}
+
+\subsubsection{ Получение данных при помощи собственных методов коллекции }
+ 
+Еще один механизм получения данных коллекции - это методы
+
+\begin{itemize}
+ \item \verb|retrieve_by_filter( const char* where_filter )|
+ \item \verb|retrieve_by_pattern( const Record& pattern )|
+\end{itemize}
+
+Оба метода возвращают поток байт, содержащий записи, отфильтрованные из общего объема данных
+коллекции на основании фактического значения полученного ими параметра.
+При этом первый метод фильтрует записи на основании условия, кодированного в переданной ему
+текстовой строке, второй - отбирает их по принципу соответствия заданному образцу. \\
+
+Пример:
+
+\begin{verbatim}
+ UAKGCollection_var collection_ = queryManager->create_collection_by_query(
+                          "select F1,F2 from UAKGTEST where F1=1 order by F2");
+ OctSeq_var octSeq_ = collection_->retrieve_by_filter("F2='test'");
+ printRC( octSeq_ );
+ collection_->destroy();
+\end{verbatim}
+
+ - этот код приведет к распечатке всех записей UAKGTEST, поле F1 которых равно "1", а поле F2 - "test".
+
+\subsubsection{ Отбор путем сопоставления с образцом }
+
+ Использование метода \verb|retrieve_by_pattern|, который отбирает записи по принципу их соответствия
+ образцу, требует более подробного комментария. 
+
+ Вообще говоря, сопоставление с образцом представляет собой широкую концепцию, которая является дальнейшим развитием принципа QBE (Query By Example).
+
+ Особенности нашей реализации принципа таковы:
+\begin{itemize}
+\item Структура записи образца должна соответствовать структуре записей в запрашиваемом наборе данных. (т. е. количество полей и их тип должны быть идентичны)
+\item Запись \verb|r| соответствует образцу \verb|p|, если:
+ \begin{enumerate}
+   \item $\forall  i \in 0\dots length(p):p[i]!=NIL \rightarrow p[i]\;match\;r[i]$
+  (Т. е. для всех индексов полей, соответствующие поля должны сопоставляться)
+   \item Два поля $r_i$ и $p_i$ сопоставимы тогда и только тогда, когда:
+    \begin{enumerate}
+    \item $type(r_i)==string \leftrightarrow (r_i\;\;LIKE\;\;p_i)$
+    \item $type(r_i)!=string \leftrightarrow (r_i==p_i)$
+    \end{enumerate}
+   (Т. е. поля строковых типов сопоставляются с помощью оператора LIKE,
+   остальных типов -- с помошью равенства).
+ \end{enumerate}
+\end{itemize}
+
+ Практически это выглядит так: \\
+
+ Допустим, у нас есть таблица UAKGTEST с двумя полями: F1 - типа number и F2 - типа varchar2.
+Пусть также мы создали коллекцию, которая работает со строками этой таблицы.
+Тогда для того, чтобы получить те строки коллекции, у которых F1=5, необходимо:
+\begin{enumerate}
+\item Сформировать запись (образец), у которой первое поле равно 5, а второе установлено в NULL
+      (это поле в фильтрации участвовать не будет);
+\item Выбрать нужные строки при помощи \verb|retrieve_by_pattern|, передав образец как параметр.
+\end{enumerate}
+
+ То же в коде: 
+
+\begin{verbatim}
+  Record_var pattern = new Record;
+  pattern->length(2);
+  FieldValueAccess::setLong( pattern[0], 5);
+  FieldValueAccess::setNull( pattern[1] );
+  OctSeq_var octSeq = collection_->retrieve_by_pattern( pattern );
+  printRC( octSeq );
+\end{verbatim}
+
+
+\subsubsection{ Добавление, изменение и удаление данных }
+
+Кроме действий, описанных выше, при работе с UAKGCollection можно выполнить следующий
+набор действий:
+ \begin{enumerate}
+  \item Добавление записей:
+     \begin{itemize}
+       \item \verb|add_record( const Record& element )| - добавляет  запись к коллекции. 
+  
+
+       \item \verb|add_records( const RecordSeq& elements )| - добавить последовательность записей.
+       \item \verb|add_rc( const OctSeq& rc )| - добавить последовательность записей в RC кодировке.
+     \end{itemize}
+
+Заметим, что при добавлении запись добавляется непосредственно в базу данных и принадлежность ее условиям выборки коллекции не проверяется. 
+Рассмотрим, к примеру, следующий фрагмент кода:
+\begin{verbatim}
+ UAKGCollection_var collection=qm->create_collection(
+                                         "select * from emp where deptno=22"
+                                                    );
+ ULong n=collection->number_of_records();
+ cout << "now number of records is:" << n << endl;
+ RecordDescription_var rd = collection->get_record_description();
+ Record_var record=CosQueryFacade::RecordAccess::createRecordByDescription(rd);
+ CosQueryFacade::RecordAccess::setShortByName(record.inout(),"EMPNO",11,rd);
+ CosQueryFacade::RecordAccess::setShortByName(record.inout(),"DEPTNO",11,rd);
+ collection->add_record(record);
+ n=collection->number_of_records();
+ cout << "now number of records is:" << n << endl;
+\end{verbatim} 
+  будет выводить 2 одинаковых числа, хотя в БД добавится одна запись.
+
+  \item Обновление записей:
+     \begin{itemize}
+       \item \verb|update_by_pattern( const Record& newRecord, const Record& pattern )| - установить в newRecord те записи, которые соответстуют образцам \verb|pattern|. Например:
+\begin{verbatim} 
+ SRecord sr1, sr2;
+ collection_->update_by_pattern(
+                 sr1._short(1)._short(2).in(), sr2._nil()._short(2).in()
+                               );
+\end{verbatim}
+  установить в \verb|(1,2)| все записи, у которых второе поле было рано 2.
+       \item \verb|update_by_filter( const Record& newRecord, const char* filter )| -- установить в \verb|newRecord| те записи, которые соответствуют SQL выражению.
+Например:
+\begin{verbatim}
+  collection_->update_by_filter(sr._short(1)._short(2),"x2=2");
+\end{verbatim}
+   установит в \verb|(1,2)| все записи, у которых поле x2 было ранее равно 2-м.
+     \end{itemize}
+
+
+  \item Удаление записей:
+     \begin{itemize}
+       \item \verb|remove_record( const Record& record )| - удалить записи, совпадающие с данной записью.
+       \item \verb|remove_records_by_filter( const char* filter )| - удалить записи, соответствующие некоторому условию.
+       \item \verb|remove_records_by_pattern( const Record& pattern )| - удалить записи, соответствующие образцу.
+       \item \verb|remove_all_records()| - удалить все записи из коллекции.
+     \end{itemize}
+ \end{enumerate}
+
+Например:
+
+\begin{verbatim}
+  UAKGCollection_var collection_ = queryManager->create_collection_by_query(
+                           "select F1,F2 from UAKGTEST where F1=1 order by F2");
+  Record_var inpRecord = new Record;
+  inpRecord->length(2);
+  FieldValueAccess::setLong( inpRecord[0], 5);
+  FieldValueAccess::setString( inpRecord[1], "test" );
+  collection_->add_record(inpRecord);
+  FieldValueAccess::setNull( inpRecord[1] );
+  OctSeq_var octSeq_ = collection_->retrieve_by_pattern(inpRecord);
+  printRC( octSeq_ );
+  collection_->remove_records_by_pattern( inpRecord );
+  collection_->destroy();
+\end{verbatim}
+
+\subsection{ Запросы к коллекции }
+
+ Приведенного выше набора методов не всегда достаточно, для комфортабельной
+работы с коллекциями записей. Иногда нам может потребоваться изменить набор 
+ запрашиваемых полей, или получить доступ к данным из связанной таблицы. 
+
+ Для подобных случае коллекции предоставляют семейство методов evaluate.
+(как QueryManager, т. е. и коллекции, и менеджер очередей реализуют интерфейс 
+QueryEvaluator).
+
+ К примеру:
+
+\begin{verbatim} 
+ result = collection->evaluate_rc_e("select x1,x3 from @ where x1=x2","")
+\end{verbatim}
+
+ выберет из коллекции поля \verb|x1|, \verb|x3| тех записей,
+ у которых \verb|x1=x2|, a запрос:
+\begin{verbatim} 
+ collection=queryManager->create_collection("select * from orders","");
+ result = collection->evaluate_rc(
+   "select @,CUSTOMERS.NAME from @,CUSTOMERS where CUSTOMER.ID=customer_id",
+   ""
+                         );
+\end{verbatim}
+
+ добавит к набору записей коллекции заказов имя заказчика из связанной
+ таблицы.
+ 
+Следующий запрос:
+\begin{verbatim}
+ result = collection->evaluate_rc("select @ from @ where NOT @","");
+\end{verbatim}
+
+ Проинвертитует коллекцию:  т. е. выберет нам все записи из источника
+данных, которые не принадлежат коллекции.
+
+Теперь, определим семантику нашего расширения SQL значком \verb|@| более
+формально:
+Если в основании коллекции лежит выражение вида:
+\begin{verbatim}
+  select <select-part> from <from-part> where <where-part> 
+\end{verbatim}
+и в evaluate\_xx передается выражение 
+\begin{verbatim}
+  select [@,][new-select-part] 
+      from @[,new_from_part] [where new_where_part]    ,
+\end{verbatim}
+  то результирующее выражение, которое будет обработано, будет имеет вид: 
+\begin{verbatim}
+ select <select-part>,<new-select-part> 
+    from <from-part>,<new-from-part> 
+    where (<where-part>) AND (<new-where-part>)".
+\end{verbatim}
+
+ Сокращенные формы обрабатываются более или менее очевидным способом.
+
+\subsubsection{Ограничения}
+
+\begin{itemize}
+ \item Коллекция может обрабатывать только SELECT запросы без клауз \verb|HAVING_BY| и \verb|GROUP_BY| Полностью граммактика интерпретируемых нами SQL выражений
+ приведена в приложении \ref{Collection-select-grammar}.
+\end{itemize}
+
+
+\subsubsection{Список методов}
+
+\begin{itemize}
+ \item 
+   \begin{verbatim}
+      evaluate_rc( const char* queryText, const char* queryFlags, 
+                   const RecordDescription& recordDescription, 
+                   const OctSeq& params)
+   \end{verbatim}
+ \item 
+   \begin{verbatim}
+      evaluate_rc_e( const char* queryText, const char* queryFlags);
+   \end{verbatim}
+ \item 
+   \begin{verbatim}
+     evaluate_rc_inout(const char* queryText, const char* queryFlags, 
+           const RecordDescription& recordDescription, OctSeq& params)
+   \end{verbatim}
+ \item 
+   \begin{verbatim}
+     evaluate_record( const char* queryText, const char* queryFlags, 
+           const RecordDescription& recordDescription, const Record& params )
+   \end{verbatim}
+ \item 
+   \begin{verbatim}
+    evaluate_records_inout(const char* queryText, const char* queryFlags, 
+                           const RecordDescription& recordDescription, 
+                           RecordSeq& params)
+   \end{verbatim}
+ \item 
+   \begin{verbatim}
+     evaluate_records(const char* queryText, const char* queryFlags, 
+                      const RecordDescription& recordDescription, 
+                      const RecordSeq& params)
+   \end{verbatim}
+\end{itemize}
+
+
+\subsection{ Подколлекции (subcollections) }
+
+ Как видно из названия, SubCollection - это "подколлекция". Т. е. мы можем
+ запросить какой-то набор данных из коллекции, организованный в коллекцию,
+ которая является подмножеством оригинала. 
+
+Способ работы с \verb|SubCollection|:
+
+ \begin{enumerate}
+  \item Создать подколлекцию:
+     \begin{itemize}
+       \item \verb|create_subcollection( const char* subquery )|
+        Здесь \verb|subquery| это SELECT-запрос к коллекции на языке,
+          так-же расширенном знаком \verb|@|, и с такими-же ограничениями,
+        как и для семейства методов коллекции \verb|evaluate|.
+     \end{itemize}
+     либо
+     \begin{itemize}
+       \item \verb|create_subcollection_by_pattern( const Record& pattern )|
+       Здесь возвращаемая коллекция это просто ограничение исходной коллекции
+       по образцу \verb|pattern|.
+     \end{itemize}
+  \item Работать с ней, как с обычной UAKGCollection
+  \item В конце работы -- удалить ее при помощи метода destroy()
+ \end{enumerate}
+
+
+Например:
+
+\begin{verbatim}
+ UAKGCollection_var collection_ = queryManager->
+              create_collection_by_fields("tname, tabtype", "tab", "1=1", "");
+ UAKGIterator_var iterator = collection_->create_uakgiterator();
+ Boolean more;
+ RecordSeq_var recordSeq = iterator->fetch_records(0, more);
+ FieldValueAccess::setNull(recordSeq[0][0]);
+ iterator->destroy();
+ UAKGCollection_var new_collection_ = collection_->
+                                create_subcollection_by_pattern(recordSeq[0]);
+ iterator = new_collection_->create_uakgiterator();
+ recordSeq = iterator->fetch_records(0, more);
+ printRecordSeq(cout,recordSeq.in());
+ iterator->destroy();
+ new_collection_->destroy();
+ collection_->destroy();
+\end{verbatim}
+
+
+\subsection{ UAKGKeyCollection}
+
+Интерфейс \verb|UAKGKeyCollection| эта специализация \verb|UAKGCollection|, 
+для свойства "иметь первичный ключ" \footnote{т. е. ключ, имеющий уникальное значение для каждой записи}.
+
+Дополнительные методы позволяют
+получать, обновлять и удалять записи из БД по заданному значению ключевых полей.
+
+\subsubsection{ Создание UAKGKeyCollection }
+
+При создании \verb|UAKGKeyCollection| дополнительно к описанным выше параметрам необходимо
+задать список ключевых полей.  Для создания KeyCollection  вы можете использовать 2 метода UAKGQueryManager:
+
+\begin{itemize}
+  \item \verb|create_key_collection_by_parts| -- который создает ключевую коллекцию по соответствующим частям SQL  предложений  с дополнительной частью: список имен полей, из которых состоят ключи. 
+Пример:
+\begin{verbatim}
+ UAKGKeyCollection_var collection = queryManager->
+   create_key_collection_by_parts("F1,F2","UAKGTEST","F1=1","F2","F1");
+\end{verbatim}
+ \item \verb|create_key_collection_by_query| -- Который создает ключевую коллекцию с помощью  SQL запросов с нашим расширением: клаузой 'with key'.
+\begin{verbatim}
+ UAKGKeyCollection_var collection = queryManager->
+   create_key_collection_by_query(
+    "select F1,F2  from UAKGTEST where F1=1 order by F2  with key F1"
+                                 );
+\end{verbatim}
+
+\end{itemize}
+
+Пример:
+
+\begin{verbatim}
+ UAKGKeyCollection_var collection = queryManager->
+      create_key_collection_by_parts("F1,F2", "UAKGTEST", "F1=1", "F2", "F1");
+\end{verbatim}
+
+или
+
+\begin{verbatim}
+ UAKGKeyCollection_var collection = queryManager->
+      create_key_collection_by_query(
+                 "select F1,F2 from UAKGTEST where F1=1 order by F2 with key F1");
+\end{verbatim}
+
+
+- эти два участка кода эквивалентны, они создают коллекцию UAKGTest, где F1 является первичным ключом.
+Как мы видим, у нас есть еще одно расширение SQL - клауза \verb|WITH KEY|.
+Она может использоваться только для получения коллекции с ключами, синтаксис
+предложения c этой клаузой следующий:
+\begin{verbatim}
+ SELECT <selection> <table-expr> WITH KEY <selection>
+\end{verbatim}
+
+Как и в SQL92, последовательность полей тоже может образовывать ключ:
+\begin{verbatim}
+ UAKGKeyCollection_var collection = queryManager->
+      create_key_collection_by_query(
+                 "select * from X with key x1,x2");
+\end{verbatim}
+
+Заметим, что правильность указания ключей лежит на совести 
+ прикладного программиста:
+ UAKGQueryService использует эту информацию, но никак не проверяет ее
+соответствие действительной организации базы данных.
+При этом ключ - это список полей из тех (и только), которые заданы в 
+базовой структуре \verb|UAKGKeyCollection|, т.е. keyDescription - это 
+подмножество recordDescription.
+
+\subsubsection{ Работа с UAKGKeyCollection }
+
+
+Для того, чтобы  получать, обновлять и удалять записи из БД по заданному
+значению ключевых полей можно использовать следующие методы:
+
+ \begin{itemize}
+   \item \verb|retrieve_record_with_key(const Record& key)| -- выбрать запись, соответствующую ключу key.
+   \item \verb|retrieve_records_with_keys(const OctSeq& keys)| -- выбрать последовательность записей по последовательности соответствующих ключей.
+   \item \verb|update_record_with_key(const Record& newRecord, const Record& key)| - занести новое значение в запись с ключом \verb|key|
+   \item \verb|update_records_with_keys(const OctSeq& records)|
+   \item \verb|remove_records_with_keys(const OctSeq& keys)| удалить  записи с соответствующими ключами.
+ \end{itemize}
+
+Кроме того, \verb|UAKGKeyCollection| предоставляет некоторые вспомогательные методы:
+
+ \begin{itemize}
+   \item \verb|get_key_description()| - получить описание ключа.
+   \item \verb|extract_keys(const OctSeq& records)| - выделить ключевые поля из последовательности записей.
+ \end{itemize}
+
+Пример:
+
+\begin{verbatim}
+  UAKGKeyCollection_var collection_ =
+                   queryManager->create_key_collection_by_query(
+                                  "select F1,F2 from UAKGTEST where F1=1 with key F2");
+  Record_var inpRecord_ = new Record;
+  inpRecord_->length(1);
+  FieldValueAccess::setString(inpRecord_[0], "test");
+  collection_->remove_record_with_key( inpRecord );
+  collection_->destroy();
+\end{verbatim}
+
+\subsection{ Использование UAKGCollectionListeners }
+
+ В прикладных программах часто бывает удобно получать нотификации о
+значащих событиях в жизни коллекции: получении или удалении новых
+елементов. Для этого предназначен механизм "Слушателей" коллекции:
+пользователь может добавить свой интерфейс обратного вызова, который
+будет вызываться при наступлении подобных событий. 
+
+\begin{verbatim}
+ interface UAKGCollectionListener
+ {
+    // вызывается при добавлении элементов
+   void  elements_added(in OctSeq elements);
+    // вызывается при изменении элементов
+   void  elements_updated(in OctSeq prev_elements, 
+                          in OctSeq new_elements);
+    // вызывается при удалении элементов
+   void  elements_removed(in OctSeq elements);
+    // вызывается при удалении всех элементов
+   void  all_elements_removed();
+    // вызывается при разрушении коллекции, как CORBA объекта.
+   void  collection_destroyed();
+ };
+\end{verbatim}
+
+ Прикладной программист должен реализовать этот интерфейс и подключить
+его к коллекции для получения модификаций с помощью вызова метода:
+\begin{verbatim}
+   unsigned long  UAKCollection::add_listener(
+                               in UAKGCollectionListener listener,
+                               in unsigned short eventMask);
+\end{verbatim}
+   Этот метод возвращает число, которым коллекция идентифицирует
+этот слушатель. Им можно воспользоваться для того, чтобы отсоединиться
+от коллекции, вызвав метод:
+\begin{verbatim}
+   boolean   UAKGCollection::remove_listener(in unsigned long listenerIndex);
+\end{verbatim}
+
+ Наконец, \verb|eventMask| -- это маска событий, которые хочет получать ваш слушатель, которая должна быть битовой комбинацией
+
+ При использовании механизма нотификаций следует помнить, 
+ что накладные расходы сервиса
+на сбор данных для нотификации относительно велики и что синхронные
+вызовы callback функций клиентов - не самое масштабируемое решение.
+Если вы хотите, чтобы несколько клиентов получали нотификации, лучше
+не регистрируйте для каждого клиента свой слушатель, а используйте
+дополнительное звено, которое получает нотификации и рассылает их 
+клиентам  асинхронными методами (например - с помощью CORBA Event Service)
+
+\subsection{ Ограничения }
+
+В настоящее время  один экземпляр коллекции может использоваться
+в только одной транзакции в одно и то же время.
+
+

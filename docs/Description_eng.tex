@@ -1,0 +1,110 @@
+
+
+\documentclass[12pt]{article}
+\usepackage[OT1,T2A]{fontenc}
+\usepackage[koi8-u]{inputenc}
+\usepackage{graphicx}
+\usepackage{verbatim}
+
+\title{ 
+  UAKGQueryServicA: General Description
+  \newline
+  {\small Document Set: GOST 19.502-78 }
+  \newline
+  {\small DocumentID: GradSoft-UAKGQuery-e-G502-78-1999.4 }
+}
+
+\date{29.01.2002}
+\author{ GradSoft }
+
+\begin{document}
+
+\maketitle{}
+
+\tableofcontents
+
+\section{  Introduction }
+
+  UAKGQuery is a CORBA service for database access.
+
+\section{ Intention:}
+
+ \begin{enumerate}
+   \item To provide universal CORBA API for database access.
+   \item To provide integration of DB transactions into CORBA model of
+ distributed transactions. 
+ \end{enumerate}
+
+\section{ Usage Description  }
+
+  Application programmers use UAKGQueyry CORBA API for database access
+ by linking application with client-side UAKGQuery libraries.
+ Also embedding UAKGQuery Service into applications is supported, by linking
+ it's with server-side libraries.
+
+\section{Programming Environment Requirements}
+
+ \begin{itemize}
+  \item Database server - Oracle-8i,9i or InterBase-6.0 on any platform.
+  \item Server-side operation system: Sun Solaris, Linux, Windows NT. 
+  (port to any posix compabilite system is possible)
+  \item Client-side operation system: Sun Solaris, Linux, Windows NT, FreeBSD 
+  (port to any posix compabilite system is possible)
+  \item ORB: ORBacus-4.x, TAO-1.1, TAO-1.2
+  \item Transactions is supported when used ORBacus 4.x and OB OTS.
+ \end{itemize}
+
+\subsection{The requirments to the technical environment }
+
+ \begin{itemize}
+   \item The server part: the coincided with minimum queries target DB 
+\item The client part: coincided with minimum queries target ORB 
+\end{itemize}
+
+
+
+\section{ Product Set }
+
+\subsection{ Distribution Set }
+
+   \begin{itemize}
+     \item Source code.
+     \item Source code of demos.
+     \item Documentation Set.
+   \end{itemize}
+
+\subsection{ Executable and Libraries Set }
+
+   \begin{itemize}
+    \item Service as executable file
+    \item Library for embedding server part of service into end-user application with collocated UAKGQuery calls
+    \item Client side library
+    \item Set of IDL filed, described access interfaces.
+    \item Set of Facade C++ header files, for easy access to UAKGQuery data structures.
+   \end{itemize} 
+  
+\subsection{ Documentation Set }
+
+ \begin{enumerate}
+   \item UAKGQuery: General Description. 
+   \item UAKGQuery: Administation Guide.
+   \item UAKGQuery: Programmer Guide.
+   \item UAKGQuery: API description.
+ \end{enumerate}
+
+ General Description, Administration Guide and Programmer Guide are supplied
+in pdf and html format in english and russian.
+
+ API Guide is supplied in html format in english.
+
+\section{ History of changes }
+
+ \begin{itemize}
+   \item 29.01.2002 - second edition.
+   \item 06.06.2001 - review.
+   \item 03.11.2000 - first edition.
+   \item 14.12.2000 - review, translated into english.
+   \item 22.12.2000 - file name changed, added DistributionSet.
+ \end{itemize}
+
+\end{document}

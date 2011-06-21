@@ -1,0 +1,252 @@
+
+\documentclass[10pt]{article}
+\usepackage[OT2,T2A]{fontenc}
+\usepackage[koi8-u]{inputenc}
+\usepackage{graphicx}
+\usepackage{verbatim}
+
+\title{ UAKGQuery: Руководство администратора }
+
+\date{31/01/2001}
+
+% $Id: AdministrationGuide_rus.tex,v 1.24 2002-01-29 18:30:19 kav Exp $
+
+\begin{document}
+
+\maketitle{}
+DocumentID: GradSoft-UAKGQuery-AG503-79-19.09.2000-1.7
+
+\tableofcontents
+
+
+\section{ Введение }
+
+UAKGQuery - модуль предназначенный для работы с реляционными БД ( в данный
+момент поддерживает работу с сервером Oracle и InterBase).
+
+
+Используя UAKGQuery можно организовать эффективный и
+однородный доступ к данным из разных источников, вне зависимости от их
+расположения и архитектурных ограничений БД. 
+
+\section{ Компиляция }
+
+\subsection{ Необходимое ПО }
+ 
+\subsubsection{ Для Windows NT }
+
+\begin{itemize}
+ \item ORB - ORBacus-4.0 или выше
+ \item Компилятор C++ Microsoft Visual C версии 6.0 или выше.
+ \item клиентская часть Oracle 8.1.5 или выше (для компиляции серверной части с поддержкой Oracle)
+ \item клиентская часть InterBase 6 или выше (для компиляции серверной части с поддержкой Interbase)
+ \item Предварительно установленный GradC++ ToolBox версии 1.4.0 или выше.
+\end{itemize}
+
+
+\subsubsection{ Для Unix }
+
+\begin{itemize}
+ \item ORB - один из 
+  \begin{itemize}
+     \item ORBacus-4.0 или выше,
+     \item TAO-1.1, TAO-1.2
+   \end{itemize}
+ \item Компилятор C++ : gcc-2.95.2 или SunProc CC 6.2 
+ \item клиентская часть Oracle 8.1.5 или выше (для компиляции серверной части с поддержкой Oracle)
+ \item клиентская часть InterBase 6 или выше (для компиляции серверной части с поддержкой Interbase)
+ \item Предварительно установленный GradSoft C++ ToolBox версии 1.4.0 или выше.
+\end{itemize}
+
+\subsubsection { Опция поддержки сервиса транзакций }
+
+ Для поддержки сервиса транзакций необходим ORbacus Tranzaction Service
+и соответственно, совместимая с ним ORB
+
+Внимание: под Windows NT транзакции не поддерживаются.
+
+\subsection{ Процесс компиляции/инсталляции }
+
+\subsubsection{ Для Windows NT } \label{installWinNT}
+
+\begin{enumerate}
+ \item Развернуть архив UAKGQuery-1.1.0.tar.gz
+ \item Перейти в образовавшуюся директорию CosQuery.1 (далее - корневой каталог проекта)
+ \item Установить в файле \verb|env_inc.nt.mak| следующие переменные: 
+      \begin{itemize}
+        \item  PROJECT\_ROOT - корневой каталог проекта 
+        \item  ORB\_DIR - директория, куда проинсталирован ORBACUS
+        \item  OCI\_HOME - директория, куда проинсталирован Oracle Call Interface (раскомментировать строчку HAVE\_ORACLE=1)
+        \item  IBASE\_HOME - директория, куда проинсталирован Interbase (раскомментировать строчку HAVE\_INTERBASE=1)
+        \item  MSVC\_HOME - директория, где находится MS Visual C++ 
+        \item  INSTALL\_DIR - абсолютный путь к целевой директории инсталляциии
+               (внимание, в нем уже должна находиться инсталляция C++ ToolBox)
+      \end{itemize}
+ \item Зайти в директорию CosQuery.1 
+ \item Запустить компиляцию:
+   \begin{itemize}
+     \item для сервера запустив make.bat 
+     \item для клиента запустив make.bat client
+   \end{itemize}
+ \item Запустить инсталляцию
+   \begin{itemize}
+     \item для сервера запустив make.bat install
+     \item для клиента запустив make.bat install-client
+   \end{itemize}
+\end{enumerate}
+
+\subsubsection{ Для Unix } \label{installUNIX}
+
+\begin{enumerate}
+ \item Развернуть архив UAKGQuery-1.1.0.tar.gz
+ \item Перейти в образовавшуюся директорию CosQuery.1
+ \item Запустить ./configure, при необходимости указав опции конфигурирования.
+ \begin{itemize}
+   \item \verb|--with-ob-xa| - если вы хотите использовать XA механизм транзакций.
+   \item \verb|--with-ots| - если вы хотите использовать CORBA Transaction Service.
+   \item \verb|--toolbox=<toolbox-prefix>| - если ваш GradSoft C++ ToolBox установлен не в \verb|/usr/local|
+   \item corbaconf (http://corbaconf.kiev.ua) опции для определения ORB.
+ \end{itemize}
+ \item Запустить компиляцию:
+   \begin{itemize}
+     \item для сервера запустив gmake 
+     \item для клиента запустив gmake client-stub-library
+   \end{itemize}
+ \item Запустить инсталляцию
+    \begin{itemize}
+      \item для сервера запустив make install
+      \item для клиента запустив make install-client-stub-linrary
+   \end{itemize}
+\end{enumerate}
+
+
+\subsubsection{ Состав инсталляции }
+
+В результате инсталляции следующие файлы будут переписаны:
+\begin{enumerate}
+\item Куда: \\
+      - в подкаталоги {\bf idl}, {\bf include} и {\bf lib} "каталога инсталляции".
+      Имя этого каталога определяется
+      путем редактирования переменной INSTALL\_DIR в Makefile.nt для Windows NT
+      (см. раздел \ref{installWinNT})
+      либо при помощи опции configure \verb|--prefix| для UNIX
+      (см. раздел \ref{installUNIX}).
+
+\item Что: 
+      \begin{enumerate}
+      \item idl-модули, в составе: \\
+            CosQuery.idl \\
+            CosQueryCollection.idl \\
+            CosQueryIDLConfig.idl \\
+            CosQueryIDLConfigV2.idl \\
+            RC.idl \\
+            UAKGQuery.idl\\
+            - в подкаталог {\bf idl}
+      \item
+            заголовочные файлы стабов и скелетонов,
+            полученные в результате трансляции idl-модуей \\
+            - в подкаталог {\bf include}
+      \item
+            заголовочные файлы \\
+            DecimalAccess.h \\          
+            FieldDescriptionAccess.h \\
+            FieldValueAccess.h \\
+            RecordAccess.h \\
+            RecordDescriptionAccess.h \\
+            - в подкаталог {\bf include/CosQueryFacade}
+      \item
+            библиотека UAKGQueryClient.lib (для Windows NT) либо libUAKGQueryClient.a (для UNIX)\\
+            - в подкаталог {\bf lib}
+      \end{enumerate}
+\end{enumerate}
+
+
+\section{ Использование }
+
+\subsection{ Запуск сервера }
+
+ При запуске серера ему необходимо указать порт приема запросов.
+
+ Эту опцию можно установить либо при помощи командной строки, либо в свойствах ORB,
+проконсультируйтесь с документацией по вашему CORBA брокеру.
+
+Что касается командной строки, то:
+\begin{itemize}
+ \item для ORBacus это опция \verb|-OAport <port>| либо свойство ooc.iiop.port в свойствах конфигурации. 
+ \item для OmniORB это опция \verb|-ORBpoa_iiop_port <port>|  
+ \item для TAO-1.1 это опция \verb|-ORBport <port>|
+ \item для TAO-1.2 это опция \verb|-ORBEndPoint iiop://:<port>|
+\end{itemize}
+
+Обязательным для успешного запуска сервера является наличие инсталлированных
+соответствующих клиентов СУБД в работающем окружении.
+
+\subsubsection{ Вывод сообщений об ошибках }
+
+ На UNIX платформах UAKGQuery использует стандартный syslog интерфейс для
+записи сообщений об ошибках. Для настройки вывода syslog проконсультируйтесь 
+с документацией на вашу операционную систему (man syslog), следуйщий алгоритм будет
+работать для большинства поддерживаемых UNIX систем:
+\begin{itemize}
+ \item Добавьте в файл \verb|/etc/syslog.conf| строчки:
+ \begin{verbatim}
+!UAKGQueryService
+*.*			/var/log/UAKGQuery.log
+# in addition, call admin on fatal errors
+*.fatal			|mail -s "UAKGQuery fatal" admin@his.cell.phone.kiev.ua
+ \end{verbatim}
+ \item Создайте пустой файл \verb|/var/log/UAKGQuery.log|
+\end{itemize}
+
+ В дополнение к этому вы можете продублировать вывод лог-вывод в файл
+средствами UAKGQueryService (см. опции командной строки)
+
+\subsubsection{ Опции командной строки  }
+
+\begin{itemize}
+ \item ORB параметры (как указанно в документации к вашей ORB)
+ \item \verb|--ORACLE_XA <xa_string>| - использовать XA транзакции Oracle.
+        Эта опция доступна только под UNIX в том случае, если сервер был откомпилирован с
+         поддержкой XA транзакций.
+ \item \verb|--ior-file-UAKGQueryService <fname>| - записать ior QueryService в файл с именем fname.
+ \item \verb|--ior-stdout| - вывести ior QueryService на стандартный вывод.
+ \item \verb|--with-naming| - зарегестрировать UAKGQueryService в CORBA Naming Service (переменные Naming должны быть установлены).
+ \item \verb|--config <fname>| - прочитать конфигурацию из файла с именем fname.
+ \item \verb|--log-to-file <fname>| - записывать лог-вывод в файл \verb|fname|.
+ \item \verb|--log-to-stderr| - выводить лог-вывод в стандартный поток ошибок программы.
+ \item \verb|--log-sql| - генерировать info-лог с текстом обрабатываемых SQL предложений. Эта опция полезна при отладке вашего приложения.
+ \item \verb|--no-syslog| - не генерировать syslog сообщения. (UNIX).
+\end{itemize}
+
+\subsection{ Запуск клиента UAKGQueryService }
+
+При запуске клиента, передайте ORB следующие параметры 
+\begin{verbatim}
+-ORBInitRef UAKGQueryService=\
+            corbaloc::srv-host-name:port/DefaultConnectionManager
+\end{verbatim}
+где:
+\begin{itemize}
+  \item srv-host-name -- IP адрес машины, на которой запущен сервер.
+  \item port -- порт, по которому принимает запросы UAKGQueryService
+\end{itemize}
+
+
+\section{ Запись изменений }
+
+\begin{enumerate}
+  \item 24.01.2002 - \begin{enumerate}
+                     \item описание порядка инсталляции пакета под Windows NT 
+                           приведено в соответствие с реальностью
+                     \item указано, что транзакции под Windows NT не поддерживаются
+                     \end{enumerate}
+  \item 18.01.2002 - коррекция требуемых версий необходимого ПО для UAKGQuery 1.1.0
+  \item 05.07.2001 - отражено требование о версии GradSoft C++ ToolBox, добавлен раздел о журналировании.
+  \item 26.04.2001 - коррекция описания установки на Windows NT.
+  \item 31.01.2001 - коррекция незначительных ошибок.
+  \item 03.11.2000 - уточнения
+  \item 31.10.2000 - добавление информации о транзакциях.
+  \item 19.09.2000 - создание.
+\end{enumerate}
+
+\end{document}

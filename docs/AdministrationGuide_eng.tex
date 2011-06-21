@@ -1,0 +1,249 @@
+
+\documentclass[10pt]{article}
+\usepackage[OT2,T2A]{fontenc}
+\usepackage{graphicx}
+\usepackage{verbatim}
+
+\title{ UAKGQuery: Administration Guide }
+
+% $Id: AdministrationGuide_eng.tex,v 1.19 2002-01-29 18:30:19 kav Exp $
+
+\begin{document}
+
+\maketitle{}
+DocumentID: GradSoft-AD-19/09/2000-1.2E
+
+\tableofcontents
+
+\section{ Introduction }
+
+UAKGQuery is a  CORBA service which proviades CORBA API for  access to relational database.
+ This release supports Oracle as relational database.
+
+ Using UAKGQuery is possible to organize effective and uniform data access
+from different sources in heterogene computing environment.
+
+\section{ Compilation }
+
+\subsection{ Software needed: }
+ 
+\subsubsection{ for Windows NT }
+
+\begin{itemize}
+ \item ORB - ORBacus-4.0 or higher
+ \item C++ Compliler: Microsoft Visual C 6.0 or higher. 
+ \item Database server: Oracle 8.1.5  or higher (needed only for compilation of server part)
+ \item Database server: InterBase 6 or higher (needed only for compilation of server part)
+ \item GradC++ ToolBox 1.4.0 or higher.
+\end{itemize}
+
+
+\subsubsection{ for Unix }
+
+\begin{itemize}
+ \item ORB - one of
+  \begin{itemize}
+     \item ORBacus-4.0 or higher, 
+     \item TAO-1.1, TAO-1.2 or higher
+   \end{itemize}
+ \item C++ compiler : gcc-2.95.2 or SunPro CC 4.2 
+ \item Database server: Oracle 8.1.5 or higher (needed only for compilation of server part)
+ \item Database server: InterBase 6 or higher (needed only for compilation of server part)
+ \item GradC++ ToolBox 1.4.0 or higher.
+\end{itemize}
+
+\subsubsection { Software needed for transaction support }
+
+ If you want to use transactional features of \verb|UAKGQuery|, ORBacus
+ Transaction service and OOC \footnote{now iona} ORBacus ORB is needed.
+
+ Note: transactional features are absent subject to \verb|UAKGQuery|
+ has been compiled for Windows NT.
+
+\subsection{ Compilation and Installation }
+
+\subsubsection{ For Windows NT }
+
+\begin{enumerate}
+ \item Unpack archive UAKGQuery-1.1.0.zip
+ \item Change current directory to CosQuery.1
+ \item Edit file \verb|env_inc.nt.mak| and set next varibles in it: 
+      \begin{itemize}
+        \item  PROJECT\_ROOT - <full\_path\_to\_CosQuery.1>\verb|\|CosQuery.1
+        \item  ORB\_DIR - directory, where ORBACUS is installed.
+        \item  OCI\_HOME - directory, where Oracle is installed (uncomment line HAVE\_ORACLE=1).
+        \item  IBASE\_HOME - directory, where Interbase is installed (uncomment line HAVE\_INTERBASE=1).
+        \item  MSVC\_HOME - directory, where MS Visual C++ is installed.
+        \item  INSTALL\_DIR - absolute path to directory, where you want to install UAKGQuery. (warning: C++ ToolBox has to be installed there)
+      \end{itemize}
+ \item Change directory to CosQuery.1 
+ \item Start compilation:
+   \begin{itemize}
+     \item for server: start make.bat 
+     \item for clent: start make.bat client
+   \end{itemize}
+ \item Start installation process:
+   \begin{itemize}
+     \item for server: run make.bat install
+     \item for client: run make.bat install-client
+   \end{itemize}
+\end{enumerate}
+
+\subsubsection{ For Unix }
+
+\begin{enumerate}
+ \item Unpack archive UAKGQuery-1.1.0.tar.gz
+ \item Change directory to CosQuery.1
+ \item Start ./configure. Set configure options if needed.
+ \begin{itemize}
+   \item \verb|--with-ots| - if you want to use CORBA Transaction Service.
+   \item \verb|--with-ob-xa| - if you want to use XA extensions of CORBA Transaction Service .
+   \item \verb|--toolbox=<path-to-toolbox>| - if you installation directory of 
+       GradSoft C++ toolbox  differs from installation directory of UAKGQuery
+       (default is /usr/local)
+   \item Also you can set location of ORB and other packages: use command
+   \verb|./configure --help| to see list of all possible options.
+ \end{itemize}
+  
+ \item Start compilation:
+   \begin{itemize}
+     \item for server: run gmake 
+     \item for client: run gmake client-stub-library
+   \end{itemize}
+ \item Start installation:
+    \begin{itemize}
+      \item for server: run make install
+      \item for client: run make install-client-stub-linrary
+   \end{itemize}
+\end{enumerate}
+
+
+ After installation next files will be installed into \verb|INSTALL_DIR|
+ directory (which is defined as variable \verb|INSTALL_DIR| in NT Makefile 
+ or as configuration parameter \verb|prefix| for UNIX)
+
+\begin{enumerate}
+  \item
+      \begin{enumerate}
+      \item idl-modules: \\
+            CosQuery.idl \\
+            CosQueryCollection.idl \\
+            CosQueryIDLConfig.idl \\
+            CosQueryIDLConfigV2.idl \\
+            RC.idl \\
+            UAKGQuery.idl\\
+            - to subdir \verb|<install-dir>/idl|  
+      \item
+            header files of CORBA stubs and skeletons, received 
+            during compilation of IDL files by IDL compiler ,
+            \\
+            - to {\bf include} subdir
+      \item
+            header files \\
+            DecimalAccess.h \\          
+            FieldDescriptionAccess.h \\
+            FieldValueAccess.h \\
+            RecordAccess.h \\
+            RecordDescriptionAccess.h \\
+            - to {\bf include/CosQueryFacade} subdir
+      \item
+            library UAKGQueryClient.lib (for Windows NT) or libUAKGQueryClient.a (for UNIX)\\
+            - to {\bf lib} subdir
+      \item
+            binary UAKGQueryService \\
+            - to {\bf bin} subdir.
+      \end{enumerate}
+\end{enumerate}
+
+
+\section{ Using }
+
+\subsection{ Starting of server }
+
+ You must set network port for requests listening in Server configuration
+parameters.
+
+ The way of doing this is ORB-depended, it can be done from server command
+ line or from ORB configuration file: consult with your ORB manual for details.
+ 
+ Below is list of such options for common object request brokers:
+
+\begin{itemize}
+ \item For ORBacus use option \verb|-OAport <port>| or property ooc.iiop.port in
+configuration file.
+ \item For OmniORB use option \verb|-ORBpoa_iiop_port <port>|  
+ \item For TAO-1.1 use option \verb|-ORBport <port>|
+ \item For TAO-1.2 use option \verb|-ORBEndPoint iiop://:<port>|
+\end{itemize}
+
+ Another precondition for succesfull service start is existance of installed
+Oracle8 client in working environment.
+
+\subsubsection{ Logging  }
+
+ UAKGQuery use standart UNIX syslog interface for logging. So, consult with
+you operation system documentation for details, next example will work
+with most of supported UNIX systems:
+\begin{itemize}
+\item Add in file /verb|/etc/syslog.conf| next strings:
+\begin{verbatim}
+!UAKGQueryService
+*.*			/var/log/UAKGQuery.log
+# in addition call administrator on fatals. 
+*.fatal			|mail -s "UAKGQuery fatal" admin@his.cell.phone.kiev.ua
+\end{verbatim}
+\item Create empty file \verb|/var/log/UAKGQuery.log|
+\end{itemize}
+
+ In addition you can dup log output to file of to stderr by setting 
+options of UAKGQueryService.
+
+\subsubsection{ Command String options  }
+
+\begin{itemize}  
+ \item Command String ORB parameters, as written in you ORB manual.
+ \item \verb|--ior-file-UAKGQueryService <fname>| - write  ior of UAKGQueryService to file with name {\bf fname}. 
+ \item \verb|--ior-stdout| - output QueryService IOR to standart program output
+ \item \verb|--with-naming| - register UAKGQueryService in CORBA Naming Service (note, that CosNaming initialization parameters must be aviable to ORB) .
+ \item \verb|--config <fname>| - read configuration from file with name \verb|fname|.
+ \item \verb|--ORACLE_XA <xa_string>| - use Oracle XA transaction Oracle.
+       This option is aviable only for UNIX in the case of server was compiled with XA support. 
+ \item \verb|--log-to-file <fname>| - dup log output to file \verb|<fname>|
+ \item \verb|--log-to-strerr| - dup log output to UAKGQuery stderr.
+ \item \verb|--log-sql| - log processed SQL sentences.
+ \item \verb|--no-syslog| - does not use syslog for logging.
+\end{itemize}
+
+\subsection{ Starting of UAKGQueryService Client }
+
+ When you start ordinary UQAKGQuery client, which receive reference on
+UAKGQuery via resolving of initial references, you can use next command line
+parameters for client ORB:
+\begin{verbatim}
+-ORBInitRef UAKGQueryService=\
+            corbaloc::srv-host-name:port/UAKGQueryService
+\end{verbatim}
+
+where:
+\begin{itemize}
+  \item srv-host-name -- IP address of machine, where UAKGQueryService runs.
+  \item port -- port, on which UAKGQueryService listenes for requests.
+\end{itemize}
+
+
+\section{ Changes }
+
+\begin{enumerate}
+  \item 24.01.2002 - \begin{enumerate}
+                     \item installing procedure description for Windows NT
+                           made to be adequate 
+                     \item pointed, transaction service for Windows NT is absent
+                     \end{enumerate}
+  \item 21.01.2002 - version dependency check for new release
+  \item 05.07.2001 - reflected 1.0.2 software requirements, added section about logging.
+  \item 06.05.2001 - review.
+  \item 26.04.2001 - review, corrections of NT install procedure.
+  \item 12.07.2000 - first english edition.
+\end{enumerate}
+
+\end{document}

@@ -1,0 +1,51 @@
+# COS/CosQuery/src/Makefile.in
+# part of implementation of GradSoft Query Service
+# (C) GradSoft 2000, 2001
+# (C) Ruslan Shevchenko <Ruslan@Shevchenko.Kiev.UA>, 1998, 2001
+# http://www.gradsoft.com.ua
+# $Id: Makefile.in,v 1.2 2003-06-03 19:22:42 rssh Exp $
+
+PROJECT_ROOT=@PROJECT_ROOT@
+include $(PROJECT_ROOT)/config/entry.mak
+
+
+NTESTS_CPP_LIB_DIR=$(PROJECT_ROOT)/ntests/cpp/lib
+NTESTS_3BASED_DIR=$(PROJECT_ROOT)/ntests/cpp/3based
+
+
+default: all
+
+include $(NTESTS_CPP_LIB_DIR)/mkLib.mak
+include $(NTESTS_3BASED_DIR)/mk3based.mak
+
+NTESTS=$(NTESTS_3BASED)
+
+all: $(NTESTS_CPP_LIB) $(NTESTS)
+
+
+build: all
+
+build-client-stub-library: all
+
+
+install:
+
+install-client-stub-library:
+
+uninstall: 
+
+uninstall-client-stub-library:
+
+uninstall-client: 
+
+clean: obj-clean
+	-rm -rf *.cache
+
+obj-clean:
+	-rm -f $(NTESTS_CPP_LIB_OBJS)
+	-rm -f $(NTESTS_CPP_LIB)
+	-rm -f $(NTESTS_3BASED_OBJS)
+	-rm -f $(NTESTS)
+	-rm -rf Templates.DB
+
+

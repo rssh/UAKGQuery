@@ -1,0 +1,70 @@
+# Makefile.in
+# part of implementation of GradSoft Query Service.
+# (C) Ruslan Shevchenko <Ruslan@Shevchenko.Kiev.UA>, 1998, 1999, 2001
+# (C) GradSoft Kiev, Ukraine 1998 - 2001
+# http://www.gradsoft.com.ua
+# $Id: Makefile.in,v 1.13 2003-04-19 14:23:13 rssh Exp $
+#
+PROJECT_ROOT=@project_root@
+include $(PROJECT_ROOT)/config/entry.mak
+#
+#
+#
+
+INSTALL_HEADERS=CosQuery2Server.h \
+ UAKGQuery2Init.h
+
+default:
+
+
+build:
+
+build-client-stub-library:
+
+install: install-generated install-headers install-subdirs
+
+install-client-stub-library: install
+
+install-generated: make-install-headers-dir
+	for i in $(PROJECT_ROOT)/generated/*@IDL_CLN_H_SUFFIX@; do \
+	 $(INSTALL_DATA) $$i $(INSTALL_HEADERS_DIR); \
+	done
+	for i in $(PROJECT_ROOT)/generated/*@IDL_CLN_H_SUFFIX@; do \
+	 $(INSTALL_DATA) $$i $(install_idl_dir); \
+	done
+
+install-headers: make-install-headers-dir
+	for i in $(INSTALL_HEADERS); do \
+	 $(INSTALL_DATA) $$i $(INSTALL_HEADERS_DIR); \
+	done
+
+install-subdirs:
+	
+
+make-install-headers-dir:
+	if [ ! -d $(INSTALL_HEADERS_DIR) ]; then \
+	   mkdir $(INSTALL_HEADERS_DIR); \
+	fi
+
+clean: 
+
+obj-clean:
+
+uninstall: uninstall-headers uninstall-subdirs uninstall-generated
+
+uninstall-headers:
+	for i in $(INSTALL_HEADERS); do \
+	 rm -f $(INSTALL_HEADERS_DIR)/$$i; \
+	done
+
+uninstall-subdirs:
+	for i in $(SUBDIRS); do (cd $$i; $(MAKE) uninstall); done
+
+uninstall-generated:
+	for i in $(PROJECT_ROOT)/generated/*@IDL_SRV_H_SUFFIX@ \
+                 $(PROJECT_ROOT)/generated/*@IDL_CLN_H_SUFFIX@; do \
+	 if test -f $(INSTALL_HEADERS_DIR)/`basename $$i`; then rm -f $(INSTALL_HEADERS_DIR)/`basename $$i`; fi ;\
+	done
+
+uninstall-client: uninstall
+

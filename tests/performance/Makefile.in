@@ -1,0 +1,71 @@
+# General make definitions and rules.
+#
+# part of grad Cos* build system
+#
+# (C) Ruslan Shevchenko <Ruslan@Shevchenko.Kiev.UA>, 1998
+# $Id: Makefile.in,v 1.5 2001-04-17 03:05:57 rssh Exp $
+#
+project_root=@project_root@
+
+
+CXX=@CXX@
+CPPFLAGS=-I$(project_root)/../steps/include -I$(project_root)/../../include -I$(project_root)/../../generated @CPPFLAGS@
+CXXFLAGS=$(CPPFLAGS) @DEFS@ @CXXFLAGS@
+INCLUDE=@INCLUDE@
+CXXCOMPILE=@CXX@ $(CXXFLAGS)
+
+LD=@LD@
+LDFLAG=@LDFLAGS@
+LIBS=@LIBS@
+
+AR=@AR@
+ARFLAGS=@ARFLAGS@
+
+CXXLIBPREPARE=@CXXLIBPREPARE@
+
+
+default: build
+
+PERF1=perf1
+PERF1_OBJS=perf1.o ../steps/3/printLib.o
+PERF2=perf2
+PERF2_OBJS=perf2.o ../steps/3/printLib.o
+PERF3=perf3
+PERF3_OBJS=perf3.o ../steps/3/printLib.o
+PERF4=perf4
+PERF4_OBJS=perf4.o ../steps/3/printLib.o
+
+PERFS=$(PERF1) $(PERF2) $(PERF3) $(PERF4)
+
+build: $(PERFS)
+
+clean: 
+	-rm -f $(PERFS)
+	-rm -f *.o
+	-rm -rf Templates.DB
+
+
+perf1: perf1.o
+	$(LD) $(LDFLAGS) -o perf1 $(PERF1_OBJS) -L../../src -lUAKGQueryClient $(LIBS)
+
+perf1.o: perf1.cpp
+	$(CXXCOMPILE) -c -o perf1.o perf1.cpp
+
+perf2: perf2.o
+	$(CXXCOMPILE) -o perf2 $(PERF2_OBJS) -L../../src -lUAKGQueryClient $(LIBS)
+
+perf2.o: perf2.cpp
+	$(CXXCOMPILE) -c -o perf2.o perf2.cpp
+
+perf3: perf3.o
+	$(CXXCOMPILE) -o perf3 $(PERF3_OBJS) -L../../src -lUAKGQuery -lclntsh -loi $(LIBS)
+
+perf3.o: perf3.cpp
+	$(CXXCOMPILE) -c -o perf3.o perf3.cpp
+
+perf4.o: perf4.cpp
+	$(CXXCOMPILE) -c -o perf4.o perf4.cpp
+
+perf4: perf4.o
+	$(CXXCOMPILE) -o perf4 $(PERF4_OBJS) -L../../src -lUAKGQuery -lclntsh -loi $(LIBS) 
+

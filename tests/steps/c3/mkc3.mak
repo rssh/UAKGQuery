@@ -1,0 +1,14 @@
+
+
+STEPCC3_DIR=$(project_root)/c3
+
+STEPCC3=$(STEPCC3_DIR)/c3
+STEPCC3_OBJS=$(STEPCC3_DIR)/c3.o $(STEP3_DIR)/printLib.o
+
+$(STEPCC3_DIR)/c3.o: $(STEPCC3_DIR)/c3.cpp
+	$(CXXCOMPILE) -c -o $(STEPCC3_DIR)/c3.o  $(STEPCC3_DIR)/c3.cpp
+
+
+$(STEPCC3_DIR)/c3: $(STEPCC3_OBJS)
+	$(CXXCOMPILE) -o $(STEPCC3)  $(STEPCC3_OBJS) -L../../src $(UAKGQUERY_CL_LIB)  $(LIBS)
+

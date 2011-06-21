@@ -1,0 +1,25 @@
+# Part of  Grad-Soft Query Service.
+# (C) Grad-Soft Ltd, Kiev, Ukraine
+# http://www.gradsoft.kiev.ua
+# $Id: Makefile.nt,v 1.2 2003-03-13 13:30:06 rssh Exp $
+
+include ../../../env_inc.nt.mak
+include ../../../config/ORB_description.nt.mak     
+include ../../../config/env_common.nt.mak
+
+
+
+default: build
+
+include mkQueryGrammar.nt.mak
+
+
+default-build: build
+build-client: 
+
+build: $(CosQuery_Utils_QueryGrammar_OBJS)
+
+
+clean:
+	@if exist *.obj $(RM) *.obj
+

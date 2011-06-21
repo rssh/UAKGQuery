@@ -1,0 +1,161 @@
+# COS/CosQuery/src/Makefile.in
+# part of implementation of GradSoft Query Service
+# (C) GradSoft 2000, 2001
+# (C) Ruslan Shevchenko <Ruslan@Shevchenko.Kiev.UA>, 1998, 2001
+# http://www.gradsoft.com.ua
+# $Id: Makefile.in,v 1.28 2003-11-13 19:38:22 rssh Exp $
+
+PROJECT_ROOT=@PROJECT_ROOT@
+include $(PROJECT_ROOT)/config/entry.mak
+
+COSCOLLECTION_SOURCE_DIR = @COSCOLLECTION_SOURCE_DIR@
+
+COSQUERY_GEN_DIR=$(PROJECT_ROOT)/generated
+COSQUERY_SRC_DIR=$(PROJECT_ROOT)/src
+COSQUERY_UTILS_DIR=$(COSQUERY_SRC_DIR)/Utils
+COSQUERY_ORACLE8_DIR=$(COSQUERY_SRC_DIR)/Oracle8
+COSQUERY_POOL_DIR=$(COSQUERY_SRC_DIR)/Pool
+COSQUERY_INTERBASE_DIR=$(COSQUERY_SRC_DIR)/InterBase
+COSQUERY_RECORDSET_DIR=$(COSQUERY_SRC_DIR)/RecordSet
+COSQUERY_COMMON_DIR=$(COSQUERY_SRC_DIR)/Common
+COSQUERY_UTILS_DIR=$(COSQUERY_SRC_DIR)/Utils
+COSQUERY_UTILS_QUERYGRAMMAR_DIR=$(COSQUERY_SRC_DIR)/Utils/QueryGrammar
+COSQUERY_NUMERIC_DIR=$(COSQUERY_SRC_DIR)/Numeric
+
+
+default: all
+
+include $(PROJECT_ROOT)/mkCosQueryGen.mak
+include Common/mkCommon.mak
+ifeq "$(ORACLE)" "yes"
+include Oracle8/mkOracle8.mak
+endif
+ifeq "$(INTERBASE)" "yes"
+include InterBase/mkInterBase.mk
+endif
+include Pool/mkPool.mak
+include Utils/mkUtils.mak
+include RecordSet/mkRecordSet.mk
+include Numeric/mkNumeric.mak
+
+UAKGQUERY_SINGLETON_INIT_OBJS=$(COSQUERY_SRC_DIR)/UAKGQuerySingletonInit.o
+UAKGQUERY_UTIL_OBJS=$(COSQUERY_COMMON_DIR)/UAKGQueryUtils.o
+
+COSQUERY_OBJS=$(COSQUERY_COMMON_OBJS) \
+ $(COSQUERY_RECORDSET_OBJS) \
+ $(COSQUERY_NUMERIC_OBJS) \
+ $(COSQUERY_UTILS_OBJS) \
+ $(COSQUERY_POOL_OBJS) \
+ $(UAKGQUERY_SINGLETON_INIT_OBJS) \
+ $(IDL_SRV_COSQUERY_ALL_OBJS)
+
+ifeq "$(ORACLE)" "yes"
+COSQUERY_OBJS := $(COSQUERY_OBJS) \
+ $(COSQUERY_ORACLE8_OBJS) 
+endif
+
+ifeq "$(INTERBASE)" "yes"
+COSQUERY_OBJS := $(COSQUERY_OBJS) \
+ $(COSQUERY_INTERBASE_OBJS) 
+endif
+
+COSQUERY_CLIENT_OBJS=$(COSQUERY_RC_OBJS) \
+ $(UAKGQUERY_SINGLETON_INIT_OBJS) \
+ $(IDL_SRV_COSQUERY_ALL_OBJS) \
+ $(COSQUERY_RECORDSET_OBJS) \
+ $(COSQUERY_NUMERIC_OBJS) \
+ $(UAKGQUERY_UTIL_OBJS)
+
+# we include skel in client libs with POA.
+# $(IDL_CL_COSQUERY_ALL_OBJS) 
+#
+
+COSQUERY_L=UAKGQuery2
+COSQUERY_SHARED_LIBS=lib$(COSQUERY_L).so
+COSQUERY_STATIC_LIBS=lib$(COSQUERY_L).a
+COSQUERY_CLIENT_SHARED_LIBS=libUAKGQuery2Client.so
+COSQUERY_CLIENT_STATIC_LIBS=libUAKGQuery2Client.a
+
+ifeq "$(SHARED)" "yes"
+COSQUERY_LIBS=$(COSQUERY_SHARED_LIBS)
+COSQUERY_CLIENT_LIBS=$(COSQUERY_CLIENT_SHARED_LIBS)
+else
+COSQUERY_LIBS=$(COSQUERY_STATIC_LIBS)
+COSQUERY_CLIENT_LIBS=$(COSQUERY_CLIENT_STATIC_LIBS)
+endif
+
+COSQUERY_ALL_LIBS=$(COSQUERY_LIBS) $(COSQUERY_CLIENT_LIBS)
+
+
+build: all
+
+build-client-stub-library: client-stub-library
+
+all: UAKGQueryService $(COSQUERY_LIBS) $(COSQUERY_CLIENT_LIBS)
+
+client-stub-library: $(COSQUERY_CLIENT_LIBS)
+
+
+$(COSQUERY_STATIC_LIBS): $(COSQUERY_OBJS) $(IDL_SRV_COSQUERY_ALL_OBJS)
+	-rm -f $(COSQUERY_STATIC_LIBS)
+	$(AR) $(ARFLAGS) $(COSQUERY_STATIC_LIBS) $(COSQUERY_OBJS)  $(LDFLAGS)
+
+$(COSQUERY_SHARED_LIBS): $(COSQUERY_OBJS) $(IDL_SRV_COSQUERY_ALL_OBJS)
+	-rm -f $(COSQUERY_STATIC_LIBS)
+	$(LD) $(LD_CREATE_FLAG) $(COSQUERY_SHARED_LIBS) $(COSQUERY_OBJS)  $(LDFLAGS)
+
+$(COSQUERY_CLIENT_STATIC_LIBS): $(COSQUERY_CLIENT_OBJS) 
+	-rm -f $(COSQUERY_CLIENT_STATIC_LIBS)
+	$(AR) $(ARFLAGS) $(COSQUERY_CLIENT_STATIC_LIBS) $(COSQUERY_CLIENT_OBJS) $(LDFLAGS)
+
+$(COSQUERY_CLIENT_SHARED_LIBS): $(COSQUERY_CLIENT_OBJS) 
+	-rm -f $(COSQUERY_CLIENT_SHARED_LIBS)
+	$(LD) $(LD_CREATE_FLAG) $(COSQUERY_CLIENT_SHARED_LIBS) $(COSQUERY_CLIENT_OBJS) $(LDFLAGS)
+
+UAKGQueryService: $(COSQUERY_SRC_DIR)/UAKGQueryService.o $(COSQUERY_LIBS)
+	$(CXXCOMPILE) -o UAKGQueryService UAKGQueryService.o -L. -l$(COSQUERY_L) $(LIBS)
+        
+
+install:
+	if test ! -d $(install_lib_dir); then mkdir $(install_lib_dir); fi; \
+	for i in $(COSQUERY_ALL_LIBS); do \
+	 $(INSTALL_DATA) $$i $(install_lib_dir); \
+	done
+	if test ! -d $(install_bin_dir); then mkdir $(install_bin_dir); fi; \
+	$(INSTALL_PROGRAM)  UAKGQueryService $(install_bin_dir)
+
+install-client-stub-library:
+	for i in $(COSQUERY_CLIENT_LIBS); do \
+	 $(INSTALL_DATA) $$i $(install_lib_dir); \
+	done
+
+uninstall: uninstall-client-stub-library
+	for i in $(COSQUERY_LIBS); do \
+	 rm -f $(installibdir)/$$i ; \
+	done
+	rm -f $(installbindir)/UAKGQueryService
+
+uninstall-client-stub-library:
+	for i in $(COSQUERY_CLIENT_LIBS); do \
+	 rm -f $(installibdir)/$$i ; \
+	done
+
+uninstall-client: uninstall-client-stub-library
+
+clean: obj-clean
+
+obj-clean:
+	-rm -f *.o *.ref
+	-rm -f $(COSQUERY_OBJS)
+	-rm -f $(COSQUERY_LIBS)
+	-rm -f $(COSQUERY_CLIENT_LIBS)
+	-rm -f UAKGQueryService
+	-rm -rf Templates.DB
+
+$(COSQUERY_SRC_DIR)/UAKGQueryService.o: $(COSQUERY_SRC_DIR)/UAKGQueryService.cpp
+	$(CXXCOMPILE) -o $(COSQUERY_SRC_DIR)/UAKGQueryService.o -c $(COSQUERY_SRC_DIR)/UAKGQueryService.cpp
+
+
+$(COSQUERY_SRC_DIR)/UAKGQuerySingletonInit.o: $(COSQUERY_SRC_DIR)/UAKGQuerySingletonInit.cpp
+	$(CXXLIBCOMPILE) -o $(COSQUERY_SRC_DIR)/UAKGQuerySingletonInit.o -c $(COSQUERY_SRC_DIR)/UAKGQuerySingletonInit.cpp
+

@@ -1,0 +1,88 @@
+
+ (C) Copyright 2000 Ruslan Shevchenko <Ruslan@Shevchenko.Kiev.UA>
+ $Source: /home/rssh/cvs-dump/cvsroot/COS/CosQuery.1/docs/DataMapping.txt,v $
+ $Id: DataMapping.txt,v 1.5 2000-05-06 08:40:18 rssh Exp $
+ Last modified by: $Author: rssh $
+
+ Mapping between CosQueryCollection::ValueType, CORBA and SQL datatypes.
+
+1. From SQL data type Into ...
+ ----------------- ------------------- ------------------- ------------------------------------------ 
+|  ValueType      | SQL type          |  Condition        | Range                                    |
+|-----------------|-------------------|-------------------|------------------------------------------|
+|                 | SQLT_NUM          |                   |                                          |
+|                 |     /             |  y = 0            |                                          |
+|  TypeShort      | NUMBER(x,y)       |      0 < x < 5    | [-(10**4 )-1, (10**4 )-1]                |
+|  TypeLong       |                   |      5 < x < 11   | [-(10**10)-1, (10**10)-1]                |
+|                 |                   |  y > 0            |                                          |
+|  TypeFloat      |                   |      0 < x < 7    | [-(10**6 )-1, (10**6 )-1]                |
+|  TypeDouble     |                   |      5 < x < 16   | [-(10**15)-1, (10**15)-1]                |
+|  TypeNumeric    |                   |  default          | [-((10**38)-1)**127, ((10**38)-1)**127]  |
+|                 |                   |                   |                                          |
+|-----------------|-------------------|-------------------|------------------------------------------|
+|  TypeString     | SQLT_CHR/VARCHAR2 |                   |                                          |
+|-----------------|-------------------|-------------------|------------------------------------------|
+|  TypeLongString | SQLT_LNG/LONG     |                   |                                          |
+|-----------------|-------------------|-------------------|------------------------------------------|
+|  TypeString     | SQLT_DAT/DATE     |                   |                                          |
+|-----------------|-------------------|-------------------|------------------------------------------|
+|  TypeRaw        | SQLT_BIN/RAW      |                   |                                          |
+|-----------------|-------------------|-------------------|------------------------------------------|
+|  TypeLongRaw    | SQLT_LBI/Long RAW |                   |                                          |
+|-----------------|-------------------|-------------------|------------------------------------------|
+|  TypeString     | SQLT_RID/ROWID    |                   |                                          |
+|-----------------|-------------------|-------------------|------------------------------------------|
+|  TypeCharacter  | SQLT_AFC/CHAR(x)  |  x = 1            |                                          |
+|  TypeString     |                   |  default          |                                          |
+|-----------------|-------------------|-------------------|------------------------------------------|
+|  TypeDateTime   | SQLT_DAT          |                   |                                          |
+|-----------------|-------------------|-------------------|------------------------------------------|
+|  TypeRaw        | SQLT_OSL/MSLABEL  |                   |                                          |
+|-----------------|-------------------|-------------------|------------------------------------------|
+|  TypeAny        | SQLT_NTY          |                   |                                          |
+|-----------------|-------------------|-------------------|------------------------------------------|
+|  TypeObject     | SQLT_REF/REF      |                   |                                          |
+|-----------------|-------------------|-------------------|------------------------------------------|
+|  TypeLongString | SQLT_CLOB/CLOB    |                   |                                          |
+|-----------------|-------------------|-------------------|------------------------------------------|
+|  TypeLongRaw    | SQLT_BLOB/BLOB    |                   |                                          |
+|-----------------|-------------------|-------------------|------------------------------------------|
+|  TypeLongRaw    | SQLT_BFILEE/BFile |                   |                                          |
+ ----------------- ------------------- ------------------- ------------------------------------------
+  
+2. Into SQL data type From ...
+
+ // Incorrect: 
+   1. now we have Decimal
+   2. Character, Decimal and Numeric  can be in.
+
+ValueType            CORBA type        SQL type           
+                                                          
+TypeBoolean          CORBA_Boolean     SQLT_INT           
+TypeChar             CORBA_Char        SQLT_AFC           
+TypeOctet            CORBA_Octet       SQLT_INT           
+TypeShort            CORBA_Short       SQLT_INT           
+TypeUShort           CORBA_UShort      SQLT_INT           
+TypeLong             CORBA_Long        SQLT_INT           
+TypeULong            CORBA_ULong       SQLT_INT           
+TypeFloat            CORBA_Float       SQLT_FLT           
+TypeDouble           CORBA_Double      SQLT_FLT           
+TypeString           CORBA_String      SQLT_STR           
+TypeObject           CORBA_Object      throws exception   
+TypeAny              throws exception  throws exception   
+TypeSmallInt         CORBA_Short       SQLT_INT           
+TypeInteger          CORBA_Long        SQLT_INT           
+TypeReal             CORBA_Float       SQLT_FLT           
+TypeDoublePrecision  throws exception  SQLT_FLT           
+TypeCharacter        throws exception  SQLT_AFC           
+TypeDecimal          throws exception  SQLT_NUM           
+TypeNumeric          throws exception  SQLT_NUM           
+TypeRaw              OctSeq            SQLT_VBI           
+TypeDateTime         DateTime          SQLT_DAT           
+TypeLongRaw          OctSeq            SQLT_BLOB          
+TypeLongString       char*             SQLT_CLOB          
+TypeWString          throws exception  throws exception   
+TypeLongWString      throws exception  throws exception   
+TypeUnknown          throws exception  throws exception   
+                                                          
+                                       

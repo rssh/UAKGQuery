@@ -1,0 +1,68 @@
+# Main Makefile for CosQuery.1 project  for WinNT
+# $Id: Makefile.nt,v 1.8 2003-03-18 13:05:18 kav Exp $
+
+
+include env_inc.nt.mak
+include config\ORB_description.nt.mak
+include config\env_common.nt.mak
+
+SUBDIRS=$(PROJECT_ROOT)\src $(PROJECT_ROOT)\tests
+INSTALL_SUBDIRS=$(PROJECT_ROOT)\idl $(PROJECT_ROOT)\include $(PROJECT_ROOT)\src
+
+default: build
+client: build-client
+idl: generate
+
+generate::
+	@for %i in ( $(CosQuery_idl_DIR) ) do \
+		@cd %i && $(MAKE) /F Makefile.nt generate
+
+build-generated:: generate
+	@for %i in ( $(CosQuery_idl_DIR) ) do \
+		@cd %i && $(MAKE) /F Makefile.nt build
+
+build-client-generated:: generate
+	@for %i in ( $(CosQuery_DIR) ) do \
+		@cd %i && $(MAKE) /F Makefile.nt build-client
+
+build-src: build-generated
+	@cd $(PROJECT_ROOT)\src && $(MAKE) /F Makefile.nt build
+
+build-client-src: build-client-generated
+	@cd $(PROJECT_ROOT)\src && $(MAKE) /F Makefile.nt build-client
+
+build-client:: build-client-src
+	@cd $(PROJECT_ROOT)\tests && $(MAKE) /F Makefile.nt build-client
+
+build:: build-src
+	@cd $(PROJECT_ROOT)\tests && $(MAKE) /F Makefile.nt build
+
+#build:: build-idl
+#	@for %i in ( $(SUBDIRS) ) do \
+#		@cd %i && $(MAKE) /F Makefile.nt default-build
+
+
+#build-client:: build-generated
+#	@for %i in ( $(SUBDIRS) ) do \
+#		@cd %i && $(MAKE) /F Makefile.nt build-client
+
+
+install:: build
+	@for %i in ( $(INSTALL_SUBDIRS) ) do \
+		@cd %i && $(MAKE) /F Makefile.nt install
+
+install-client:: build-client
+	for %i in ($(INSTALL_SUBDIRS)) do \
+		cd %i && $(MAKE) /F Makefile.nt install-client
+
+obj-clean::
+	@for %i in ($(SUBDIRS)) do \
+		@cd %i && $(MAKE) /F Makefile.nt clean
+
+clean:: obj-clean
+        @echo BBBB $(CosQuery_idl_DIR)
+	@for %i in ( $(CosQuery_idl_DIR) ) do \
+		@cd %i && $(MAKE) /F Makefile.nt clean
+
+lib-clean-only::
+	

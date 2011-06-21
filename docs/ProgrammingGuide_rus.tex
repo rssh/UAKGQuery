@@ -1,0 +1,1909 @@
+
+\documentclass[10pt]{article}
+\usepackage[OT2,T2A]{fontenc}
+\usepackage[koi8-u]{inputenc}
+\usepackage{graphicx}
+\usepackage{verbatim}
+
+\title{ UAKGQuery: Руководство программиста }
+
+% $Id: ProgrammingGuide_rus.tex,v 1.39 2002-12-26 17:08:17 rin Exp $
+
+\bibliographystyle{plain}
+
+\begin{document}
+
+\maketitle{}
+DocumentID: GradSoft-PR-16/06/2000-1.5
+
+\tableofcontents
+
+\section{ Введение }
+
+ UAKGQuery представляет собой CORBA \cite{OMG-CORBA-1} сервис для доступа к
+ реляционным базам данных. Он предоставляет программисту CORBA API, 
+ позволяющее эффективно  интегрировать обращения к базам данных в общую
+ инфраструктуру распределенного CORBA приложения.
+
+ Используя UAKGQuery можно организовать эффективный и однородный доступ к
+ данным из разных источников, вне зависимости от их расположения и архитектурных
+ ограничений БД.
+
+ Этот документ представляет собой более или менее неформальное введение
+ в UAKGQuery. Материал расположен не по степени сложности, а "так, как
+ удобно рассказывать". Строгое и полное описание UAKGQuery находится в
+ Справочнике \cite{UAKGQuery-API}. 
+
+ \subsection{Историческая справка:}
+
+ сервис UAKGQuery вырос из реализации CosQuery \cite{OMG-Cos-Query}, и начал развиваться с 1998 г.
+  После анализа масштабируемости и 
+ производительности структура CosQuery API была полностью пересмотрена.  Некоторые из
+ примененных методов построения эффективных распределенных приложениях
+ можно найти в \cite{rssh-1} \cite{rssh-2} %\cite{rssh-3}
+  
+ \subsection{Предварительные сведения}
+
+ Предполагается, что читатель знаком с архитектурой CORBA \cite{OMG-CORBA-1}
+и имеет опыт работы с CORBA приложениями на C++. (для изучения мы рекомендуем
+ \cite{Adv-CORBA-Programming}
+  %, \cite{Liskov}
+ ). Также предполагается что читатель знаком
+с основами реляционных баз данных.
+ Последняя глава также требует знакомства с такими понятиями как транзакции,
+CORBA Transaction Service \cite{OMG-COS-OTS} и XA транзакции \cite{XOPEN-XA}.
+Впрочем, при первом чтении ее можно опустить.
+
+\section{ Общее описание механизма работы }
+
+ Процесс работы пользовательского приложения с UAKGQuery выглядит следующим
+ образом:
+
+ \begin{itemize}
+   \item Приложение инициализирует ORB, При необходимости, сервис транзакций и UAKGQueryService.
+   \item Получает ссылку на CORBA объект типа DBConnectionManager 
+  (менеджер соединений с базами данных),
+  посредством механизма разрешения инициальных объектов в CORBA.
+   \item Создает Объект QueryManager, с помощью вызова \\ \verb|DBConnectionManager::create_query_manager|, который предоставляет API для создания и выполнения 
+      SQL запросов и коллекций.
+   \item Пользуясь QueryManager можно либо 
+      \begin{itemize}
+         \item сразу получить результат SQL запроса,
+         \item создать запрос для интерактивного чтения данных, 
+      \end{itemize}
+   \item В конце работы необходимо уничтожить объект QueryManager, вызвав 
+    метод destroy.
+ \end{itemize}
+
+\subsection{ Формальные моменты:  }
+
+\begin{itemize}
+  \item Все определения UAKGQuery2 соответствуют IDL определениям 
+  UAKGQuery2.idl. 
+  Соответственно, лучший способ ознакомиться с API Query - посмотреть на
+  этот IDL.
+  \item Система поставляется вместе с C++ файлами, генерированными из IDL.
+  Имя файла зависит от ORB, используемого вами; мы будем предполагать, что
+  следующее выражение:
+\begin{verbatim}
+#include CORBA_STUB_HEADER(UAKGQuery2)
+\end{verbatim}
+  включает в Ваш проект определения UAKGQuery2.
+\end{itemize}
+
+\section{ Процесс подключения к БД  }
+
+ Для того, чтобы установить соединение с базой данных необходимо:
+ \begin{enumerate}
+   \item Инициализировать CORBA окружение, пользуясь функцией \verb|CORBA::ORB_init|
+   \item Инициализировать сервис, пользуясь функцией \verb|initUAKGQueryService|. Эта функция определена в заголовочном файле \verb|UAKGQuery2Init.h|.
+   \item Получить инициальный объект по имени "UAKGQueryService", пользуясь
+     стандартным механизмом инициальных ссылок в CORBA.
+   \item Преобразовать его к типу DBConnectionManager.
+   \item Получить QueryManager.
+ \end{enumerate}
+
+ Это можно проиллюстрировать следующим фрагментом кода на C++ :
+\begin{verbatim}
+#include <iostream>
+#include CORBA_H // для CORBA окружения
+#include CORBA_STUB_HEADER(UAKGQuery2)  // для UAKGQuery
+#include <UAKGQuery2Init.h> // для метода инициализации.
+
+ ........
+
+    // инициализировать ORB
+    orb = CORBA::ORB_init(argc,argv);
+
+    // инициализировать UAKGQueryService
+    initUAKGQuery2(orb.in());
+
+    // получить инициальный объект
+    CORBA::Object_var obj;
+    try {
+       obj = orb->resolve_initial_references("UAKGQueryService");
+    }catch(const CORBA::ORB::InvalidName&){
+       std::cerr << argv[0] << ": can't resolve UAKGQueryService" << std::endl;
+       return 1;
+    }
+        
+    if(CORBA::is_nil(obj)) {
+      std::cerr << argv[0] << ": UAKGQueryService is a nil object reference"
+      std::cerr << std::endl;
+      return 1;
+    }
+
+
+    // Преобразовать его тип в DBConnectionManager.
+    UAKGQuery2::DBConnectionManager_var dbManager =
+            UAKGQuery2::DBConnectionManager::_narrow(obj);
+    if (CORBA::is_nil(dbManager)) {
+      std::cerr << argv[0] << ": can't narrow dbManager to correct type" << std::endl;
+      return 1;
+    } 
+
+   // Получить QueryManager, с помощью вызова DBConnectionManager
+    UAKGQuery2::QueryManager_var queryManager;
+    try {
+      queryManager = 
+        dbManager->create_query_manager("skott","tiger","Oracle","Oracle9","");
+    }catch(UAKGQuery2::QueryManagerNotFound){
+      std::cerr << argv[0] <<": can't find query manager." << std::endl;
+      return 1;
+    }
+
+    // now you can do something with QueryManager
+    ..........
+    ..........
+
+    //time to disconnect.
+    queryManager->destroy();
+
+
+\end{verbatim}
+
+\section{ Пример выполнения простых запросов  }
+
+ Выполнение простых запросов можно произвести, пользуясь семейством
+ методов QueryEvaluator::еvaluate:
+
+    \verb|evaluate|, 
+    \verb|evaluate_e|, 
+    \verb|evaluate_inout|, 
+
+
+ эти методы отличаются только типом входных и выходных
+параметров. Мы сейчас приведем простой пример обращения к базе данных, 
+а потом приступим к описанию параметров метода и типов данных:
+
+
+\begin{verbatim}
+
+ try {
+   UAKGQuery2::RecordSet_var recordSet =
+          queryManager->evaluate_e("select * from tab",
+                                    "SQL92"
+                                   ); 
+ }catch(const UAKGQuery2::QueryFlagInvalid& ex){
+   cerr << "QueryFlagInvalid:" << ex.why << endl;
+ }catch(const UAKGQuery2::QueryProcessingError& ex){
+   cerr << "QueryProcessingError:" << ex.why << endl;
+ }
+
+\end{verbatim}
+
+ Что это означает:
+ \begin{itemize}
+  \item RecordSet -- это тип результата, обозначающий последовательность
+   записей. 
+  \item "select * from tab" -- собственно текст SQL запроса.
+  \item "SQL92" - флаг запроса, где можно указывать язык запроса и другие
+   параметры, такие как "количество считываемых за один раз записей".
+ \end{itemize}
+
+ Теперь для полноты картины приведем функцию печати полученной информации, 
+а потом перейдем к рассказу о типах данных.
+
+\begin{verbatim}
+void printRecordSet(std::ostream& out, const UAKGQuery2::RecordSet* rs)
+{
+ for(CORBA::Long nRecord=0; nRecord<rs->getNRows(); ++nRecord){
+   for(CORBA::ULong nField=0; nField<rs->getNColumns(); ++nField){
+     CORBA::String_var str = rs->getAsStringAt(nRecord,nField,"NULL");
+     out << str ;
+     out << "|";
+   }
+   out << '\n';
+
+ }
+}
+\end{verbatim}
+
+\section{ Типы данных }
+
+\subsection{ DateTime }
+   Структура DateTime применяется для хранения и обработки переменных
+типа время.
+\begin{verbatim}
+    struct DateTime {
+        ///
+        short year;
+        ///
+        octet month;
+        ///
+        octet day;
+        ///
+        octet hour;
+        ///
+        octet minute;
+        ///
+        octet second;
+    };
+\end{verbatim}
+
+\subsection{ FieldType }
+
+ Этот просто перечисление представляеющее тип поля в реляционной БД:
+ 
+\begin{verbatim}
+  /**
+   * what can be not null value in DB:
+   **/
+    enum FieldType {
+        ///
+        TypeNull,
+        ///
+        TypeBoolean,
+        ///
+        TypeChar,
+        ///
+        TypeCharacter,
+        ///
+        TypeOctet,
+        ///
+        TypeShort,
+        ///
+        TypeUShort,
+        ///
+        TypeSmallInt,
+        ///
+        TypeLong,
+        ///
+        TypeULong,
+        ///
+        TypeInteger,
+        ///
+        TypeFloat,
+        ///
+        TypeReal,
+        ///
+        TypeDouble,
+        ///
+        TypeDoublePrecision,
+        ///
+        TypeString,
+        ///
+        TypeDecimal,
+        ///
+        TypeNumeric,
+        ///
+        TypeDateTime,
+        ///
+        TypeRaw,
+        ///
+        TypeWString,
+        ///
+        TypeBlob,
+        ///
+        TypeClob,
+        ///
+        TypeWclob
+    };
+\end{verbatim}
+ 
+ Соответствие SQL типов данных и CORBA типов приведено в следующей
+таблице:
+\begin{footnotesize}
+  $$
+   \begin{array}{|c|c|c|c|}  \hline
+                 &  CORBA  & SQL\_ORACLE                        & SQL\_InterBase \\ \hline 
+     TypeBoolean & boolean & CHAR(1) [in]                       & CHAR(1) [in] \\ 
+     TypeChar    & char    & CHAR(1)                            & CHAR(1) \\
+     TypeOctet   & octet   & CHAR(1) [in]                       & CHAR(1) [in]  \\ 
+     TypeShort   & short   & NUMBER(5,0)                        & SMALLINT  \\
+     TypeUShort  & unsigned short  & NUMBER(5,0)                & SMALLINT\\
+     TypeLong    & long    & NUMBER(10,0)                       & INTEGER  \\
+     TypeULong   & unsigned long & NUMBER(10,0)                 & INTEGER \\
+     TypeFloat   & float  &  NUMBER(x,y) \;\; x < 5 \land y > 0 & FLOAT \\
+     TypeDouble  & double &  NUMBER(x,y) \;\; x>5 \land y > 0   & DOUBLE PRECISION \\
+     TypeString  & string & VARCHAR2(X)                       & VARCHAR(X) \\
+     TypeSmallInt & short & NUMBER(5,0)                       & SMALLINT \\
+     TypeInteger  & long & NUMBER(10,0)                       & INTEGER \\
+     TypeReal,   &  &                                        & FLOAT \\
+     TypeDoublePrecision &  &                                & DOUBLE PRECISION \\
+     TypeCharacter &  &                                       & CHAR(1) [in] \\
+     TypeDecimal & UAKGQuery2::Numerix & NUMBER(x,y) \land x > 10   & NUMERIC \\
+     TypeNumeric & UAKGQuery2::Numeric &                           & NUMERIC \\
+     TypeDateTime & UAKGQuery2::DateTime & DATE & DATE\\
+     TypeRaw  &  sequence<octet>  &  LOB &\\
+     TypeLongRaw & sequnece<octet> & BLOB &\\
+     TypeLongString & sequence<char> &  CLOB &\\
+     TypeLongRaw & sequnece<octet> & BLOB                    & BLOB \\
+     TypeLongString & sequence<octet> && \\
+     TypeWString & wstring  & NCHAR, NVARCHAR &\\
+     TypeLongWString & sequence<octet> && \\
+     TypeBlob & UAKGQuery2::Blob & BLOB & BLOB \\
+     TypeClob & UAKGQuery2::Clob & CLOB & BLOB \\
+     TypeWclob & UAKGQuery2::Wclob & NCLOB & BLOB \\ \hline
+   \end{array}
+  $$
+\end{footnotesize}
+
+\subsection{RecordSet}
+
+ RecordSet представляет собой виртуальную таблицу, состоящую из строк
+записей БД, нумерующихся с нуля. Сами строки - наборы полей, также 
+нумерующиеся с нуля, соответствующее общей структуре: у каждой колонки
+есть имя, тип поля задан типом колонки.
+ RecordSet реализован как тип, передающийся по значению
+(valuetype)
+\footnote{
+ Для болeе детального ознакомления с ValueType см.
+\cite{OMG-CORBA-OBV}.
+}
+Фактически обмен данными между клиентом и сервером происходит на уровне 
+таких виртуальных таблиц: Клиент передает серверу sql запрос с таблицей,
+содержащей параметры запроса. В свою очередь, сервер при запросах 
+также возвращает клиенту таблицу, содержащую результат. Данные виртуальной 
+таблицы могут быть изменены с помощью встроенных методов.
+API доступно по следуйщей ссылке: <APIpref>
+
+
+\subsubsection{создание}
+
+ Объекты типа RecordSet создаются при помощи стандартного механизма
+фабрик типов-значений CORBA: т. е. для того, чтобы получить фабрику таких
+объектов мы должны запросить ее у ORB, с помощью метода \verb|lookup_value_factory|,
+дав как аргумент полное ID типа объекта.
+
+Например, следующий фрагмент кода создает пустую таблицу RecordSet:
+
+\begin{verbatim}
+    UAKGQuery2::RecordSet_init* recordSetFactory;
+    CORBA::ValueFactory vf=orb->lookup_value_factory(
+                  "IDL:gradsoft.kiev.ua/UAKGQuery2/RecordSet:1.0");
+    recordSetFactory=UAKGQuery2::RecordSet_init::_downcast(vf);
+    if (recordSetFactory==NULL) {
+       // fatal error, UAKGQuery2 was not initializated.
+       throw what-you-want;
+    }
+
+    ..........
+    UAKGQuery2::RecordSet_var recordSet = recordSetFactory->create();
+    ..........
+\end{verbatim}
+ 
+ Этот вызов \verb|create()| создает пустой набор записей, состоящий из 
+ 0 столбцов и 0-ля строк. 
+
+ Естетственно, в нетривиальном проекте Вы, возможно, заходите определить
+фабрику RecordSet как член класса-синглетона и обращаться к ней с помошью
+статического метода соответствующего класса.
+
+
+\subsubsection{Использование}
+
+  Чем характеризуется набор данных:
+  \begin{itemize}
+    \item размерность и структура: мы можем узнать количество строк и столбцов 
+     в таблице
+     с помощью методов \verb|getNRows()| и \verb|getNColumns()|. Мы можем 
+     добавить колонку с именем \verb|name| и типом \verb|t| с помошью метода
+     \verb|addColumn(in string name, in FieldType t)| Также мы можем добавить
+     строку к уже сформированной записи с помощью метода \verb|addRow()|.
+     К примеру, следующий фрагмент кода инициализирует структуру записи 
+     типа \verb|( ID: NUMBER(10), NAME: STRING(30) )|
+\begin{verbatim}
+UAKGQuery2::RecordSet_var rs=recordSetFactory->create();
+rs->addColumn("ID",TypeULong);
+rs->addColumn("NAME",TypeString);
+rs->setFieldSizeAt(1,30);
+\end{verbatim}
+     Для управления структурой мы применили прежде не встречавшийся метод
+\verb|setFieldSizeAt(int column, ULong size)|. Как Вы наверное уже догадались,
+он устанавливает размер поля соответствующей колонки и применим только к типам 
+полей переменной длинны. Кстати, узнать размер поля при тех же ограничениях
+можно с помощью метода \verb|getFieldSizeAt(int column)|. \newline
+     Кроме размера поля есть еще свойства десятичных чисел: точность и 
+масштаб (позиция дестичной точки) [ scale and precision ].
+Эти свойства устанавливаются с помощью метода \verb|setNumericPropertiesAt|. \newline
+     Столбцы и колонки можно удалять. Соответствующем методы: \verb|dropRow()| и \verb|dropColumn()|.
+     Наконец именами колонок также можно управлять: 
+     \begin{itemize}
+      \item \verb|getColumnNameByIndex()| - возвращает имя колонки по индексу.
+      \item \verb|getColumnIndexByName()| - наоборот.
+     \end{itemize}
+    \item доступ: для каждого типа данных \verb|Xxx| определены методы доступа:
+     \begin{itemize}
+       \item \verb|get<Xxx>At(unsigned long row, unsigned long column)| - возвращающее значение соответствующего типа, находящееся в позиции $(row, column)$.
+Исключения:
+        \begin{itemize}
+          \item \verb|InvalidFiedType| - если мы пытаемся взять значение другого типа, чем тип столбца \verb|column|. 
+          \item \verb|FiedIsNull| - если там находится нулевое значение.
+          \item \verb|InvalidRow| и \verb|InvalidColumn| - если мы передали неправильные координаты.
+        \end{itemize}
+       \item \verb|set<Xxx>At(unsigned long row, unsigned long column, Xxx value)| - записать значение. Семантика исключений очевидна.
+       \item \verb|isNullAt(row,column)| - возвращает \verb|true|, если по соответствующему адресу находится пустое значение (NULL).
+       \item \verb|setNullAt(row,column)| - установить пустое значение.
+       \item \verb|getAsStringAt(row,column,nullRepresentation)| - получить изображение значения в строке. \verb|nullRepresentation| - это строка, которая возвращается в случае доступа к NULL. Этот метод может быть довольно полезен в тех случаях, когда все, что нам надо сделать со значением - это вывести его.
+     \end{itemize}
+    \item специфика: для еффективной работы с неинтерпритированными двоичными данными в \verb|RecordSet| есть специальный метод:
+    \begin{itemize}
+      \item \verb|passRawAt(row,column,raw)| - который работает так-же как и 
+ в \verb|set|, но в языках с ручным распределением памяти (таких, как C++) 
+ передает данные в \verb|raw| не по значению, а по ссылке. 
+    \end{itemize}
+  \end{itemize}
+ 
+
+
+\subsection{ Numeric }
+
+Numeric - это специализированный тип данных для работы с числами большой
+точности или размера. 
+
+Переменная типа Numeric создается с помощью фабрики так же, как и RecordSet:
+\begin{verbatim}
+    UAKGQuery2::Numeric_init* numericFactory;
+    CORBA::ValueFactory vf=orb->lookup_value_factory(
+                  "IDL:gradsoft.kiev.ua/UAKGQuery2/Numeric:1.0");
+    numericFactory=UAKGQuery2::Numeric_init::_downcast(vf);
+    if (numericFactory==NULL) {
+       // fatal error, UAKGQuery2 was not initializated.
+       throw what-you-want;
+    }
+    UAKGQuery2::Numeric_var num = NumericFactory->create();
+\end{verbatim}
+
+Для работы с числами Numeric предоставляет набор методов, которые описаны
+в API. 
+
+\section{ Выполнение запросов }
+
+ Итак, как мы уже говорили -- выполнение запроса производится с помощью семейства методов \verb|evaluatexxx| объекта QueryManager.
+
+\begin{verbatim}
+ Примечание : если выполняется запрос, в котором выбираются поля с одинаковыми именами, 
+ например select a.name, b.name from a, b то будет возбуждено исключение
+ UAKGQuery2::QueryProcessingError : name in use. Для того чтобы избежать этого, 
+ используйте синонимы.
+\end{verbatim}
+
+\subsection{ Запросы без параметров }
+
+ Рассмотрим еще раз пример выполнения простого запроса:
+
+\begin{verbatim}
+ try {
+   UAKGQuery2::RecordSet_var recordSet = queryManager->evaluate_e("select * from tab","SQL92");
+ }catch(const UAKGQuery2::QueryFlagInvalid& ex){
+   cerr << "CosQuery::QueryTypeInvalid:" << ex.why << endl;
+ }catch(const UAKGQuery2::QueryProcessingError& ex){
+   cerr << "QueryProcessingError:" << ex.why << endl;
+ }
+
+\end{verbatim}
+
+ Теперь мы уже знаем, что:
+\begin{itemize}
+  \item Возвращаемое значение представляет собой ValueType RecordSet.
+  \item Первый параметр - собственно SQL запрос.
+  \item Второй параметр - флаги запроса. 
+\end{itemize}
+
+\subsection{ Выполнение запросов с параметрами  }
+
+Проиллюстрируем это на примере выполнения запроса:
+\begin{verbatim}
+select name from empls where id=:ID
+\end{verbatim}
+
+ Где :ID -- один из параметров запроса типа CORBA::Long.
+
+\begin{verbatim}
+char* getEmployeeNameById(long id)
+{
+  RecordSet_var params = RecordSetFactory::create();
+  params->addColumn("ID",TypeLong);
+  params->addRow();
+  params->setLongAt(0,0,id);
+  RecordSet_var retval = queryManager->evaluate(
+                                "select name from empls where id=:ID","",
+                                params);
+  if (retval->getNRows()==0) {
+      throw IncorrectEmployeeId(id);
+  }
+  return retval->getAsStringAt(0,0,"Null");
+}
+\end{verbatim}
+
+ Заметим, что host переменные могут использоваться как для передачи информации
+в DB, так и для извлечения, например с помощью SQL конструкции select into.
+
+ Для этих целей предусмотрен метод \verb|evaluate_inout|.
+
+\begin{verbatim}
+ Примечание : если выполняется запрос, в котором выбираeтся несколько полей 
+ в один параметр, например, select a, b into v1, v1 from dual то в него будет
+ записано последнее значение.
+\end{verbatim}
+
+ 
+\subsection{ Batch выполнение запросов с параметрами  }
+
+ В том случае, когда база данных поддерживает т.н. пакетный режим 
+исполнения, вы можете передать как параметр последовательность записей.
+В этом случае эффект выполнения запроса будет такой же, как и последовательное
+выполнение нескольких запросов с одной записью, как параметром.
+
+ Для  Oracle версии 8.0 это могут быть только обращения к PL/SQL процедурам,
+ версии 8.1 и 9 - некоторые виды insert, update и delete запросов.
+
+\section{ Интерфейс Query  }
+
+ Использование evaluate не покрывает всего спектра работы с БД. Основные
+ недостатки:
+ \begin{enumerate}
+   \item Мы вынужденны получать все данные запроса за 1 раз.
+   \item Мы должны знать заранее структуру получаемых данных.
+   \item Мы каждый раз интерпретируем SQL. 
+ \end{enumerate}
+
+ Более полное использование возможностей реляционной БД достигается с
+ использованием интерфейса Query.
+
+\begin{verbatim}
+   interface Query
+   {
+
+     /**
+      *@return owner of query
+      **/
+     readonly attribute QueryManager query_mgr;
+
+     /**
+      *@return text of query.
+      */
+     readonly attribute string  queryText;
+
+
+     /**
+      * return status of query: i.e:
+      *  complete when query is executed, otherwise incomplete
+      */
+     QueryStatus get_status ();
+
+
+     /**
+      * prepare query for executing.
+      * if query have no parameters, paramsDescription must be empty
+      * sequence.
+      */
+     void prepare_query(in RecordSet paramsDescription)
+                   raises(QueryProcessingError);
+
+     /**
+      * synonim for prepare_query
+      **/
+     void prepare(in RecordSet paramsDescription)
+                   raises(QueryProcessingError);
+
+
+     /**
+      * execute query
+      *@params octSeq_  records of execute parameters
+      * (note, that prepare parameters is record descriptio of execute
+      *  record).
+      **/
+     void execute(in RecordSet rs)
+                            raises(QueryProcessingError);
+
+     /**
+      * execute query with no parameters
+      **/
+     void execute_e() raises(QueryProcessingError);
+
+     /**
+      * execute query with inout parameters
+      *@params octSeq_  records of execute parameters
+      **/
+     void execute_inout(inout RecordSet rs)
+                            raises(QueryProcessingError);
+
+
+     /**
+      * get description of records parameters
+      *@precondition
+      * must be called after prepare
+      **/
+     RecordSet  get_parameters_description()
+                               raises(QueryProcessingError);
+
+     ///
+     RecordSet get_all_parameters()
+                               raises(QueryProcessingError);
+
+     ///
+     RecordSet get_parameters(in StringSeq neededFields)
+                               raises(QueryProcessingError,
+                                      InvalidParameterName);
+
+     /**
+      *@returns number of fetched rows.
+      */
+     unsigned long  get_row_count()
+                       raises(QueryProcessingError);
+
+     /**
+      * fetch query result in records.
+      * @param numberOfRecords -- number of records to fetch.
+      *        0 means, that we want to fetch all records.
+      * @param more -- true, if status is incomplete (i.e. we can query
+      * more results), otherwise false.
+      * @returns fetched rows packed in RC coding to octet sequence.
+      **/
+     RecordSet  fetch(in unsigned long numberOfRecords, out boolean more)
+                       raises(QueryProcessingError);
+
+     /**
+      * synonim for fetch_rc.
+      */
+     RecordSet  get_result(in unsigned long numberOfRecords, out boolean more)
+                       raises(QueryProcessingError);
+
+
+     /**
+      * skip N records without retrieving.
+      *@returns actual number of skipped records.
+      */
+     unsigned   long  skip(in unsigned long numberOfRecords,
+                           out boolean more)
+                       raises(QueryProcessingError);
+
+
+     /**
+      * request Blob for filling query parameters
+      *@returns empty Blob for writing only.
+      */
+     Blob create_blob() raises(QueryProcessingError);
+
+     /**
+      * request Clob for filling query parameters
+      *@returns empty Clob for writing only.
+      */
+     Clob create_clob() raises(QueryProcessingError);
+
+     /**
+      * request Wclob for filling query parameters
+      *@returns empty Wclob for writing only.
+      */
+     Wclob create_wclob() raises(QueryProcessingError);
+
+     /**
+      * destroy query, which not longer needed
+      **/
+     void        destroy();
+
+   };
+\end{verbatim}
+
+ При работе с Query программист должен придерживаться следующей последовательности действий:
+
+ \begin{enumerate}
+   \item создать запрос, используя метод \verb|QueryManager::create_query|.
+   \item подготовить запрос к выполнению, вызвав метод \verb|Query::prepare|. Параметром
+   этого метода является описание записи входных параметров запроса.
+   \item выполнить запрос при помощи какого-либо из методов семейства \verb|Query::executexxx|.
+   \item извлечь данные при помощи методов семейства \verb|Query::fetch|
+   \item удалить ненужный запрос.
+ \end{enumerate}
+
+  К примеру, типичная задача "получение имени работника по id" будет выглядеть следующим образом:
+
+\begin{verbatim}
+  Query_var query = queryManager->create_query(
+                                "select name from empls where id=:ID","");
+  query->prepare(params); 
+  .......
+  query->execute(params);
+  RecordSet_var retval = query->fetch(0,false); 
+  query->destroy();
+\end{verbatim}
+
+ Заметим, что этот пример явно из вымышленной жизни: в реальности для выполнения
+одного короткого запроса любой здравомыслщий программист будет использовать интерфейс QueryEvaluator:
+
+\begin{verbatim}
+  RecordSet_var retval = queryManager->evaluate_e(
+                                "select name from empls where id=:ID","");
+\end{verbatim}
+
+ Зачем в таком случае нужна Query (?): для более сложных случаев.
+\begin{itemize}
+  \item использование 'преподготовленной' (prepared) Query - т. е. запрос 
+можно инициализировать один раз, а потом его использовать.
+  \item использование API получения данных по частям
+   (шаблон проектирования 'Итератор').
+\end{itemize}
+ 
+
+\subsection { Prepared Query }
+
+ Запрос можно подготовить, вызвав функцию prepare 1 раз, а потом много раз 
+исполнять, меняя только значения параметров. Это более эффективно для часто
+повторяющихся запросов, так как анализ SQL предложения и передача описаний
+параметров производится только 1 раз.
+
+ Типичное использование этой техники можно проиллюстрировать следующими
+фрагментами кода:
+
+\begin{verbatim}
+class EmployeeManager
+{
+ Query id2nameQuery_;
+  
+ ....
+ 
+public:
+
+ char* getNameById();
+
+};
+
+void EmployeeManager::init()
+{
+ ....
+ id2nameQuery_ = qm_->create_query("select name from empls where id=:id","");
+ id2nameQuery_->prepare(params);
+ .....
+}
+
+char* EmployeeManager::getNameById(CORBA::Long id)
+{
+ params->setLongAt(0,0,id);
+ id2nameQuery_ ->execute(params); 
+ .....
+}
+
+EmployeeManager::~EmployeeManager()
+{
+
+  .....
+  id2nameQuery_->destroy();
+  ....
+}
+
+\end{verbatim}
+
+ Т. е. мы помещаем создание и инициализацию запроса в секцию инициализации 
+класса, удаление запроса -- в деструктор, а в функции которая делает реальную
+работу помещаем собственно это работу.
+
+ Правда заметим, что в таком случае Query является разделяемым объектом и
+одновременное использование одного-того же запроса с разными параметрами
+станет невозможным, что возможно не удовлетворит требовательного проектировщика.
+
+Более жизненным примером является использование подготовленного запроса в 
+пакетном режиме: скажем когда нам надо передать тнесколько тысяч записей 
+блоками по 500 записей.
+
+\subsection { Интерактивное извлечение данных  }
+
+ Еще одно полезное свойство интерфейса Query -- API для получения данных
+по частям (в соответствии с шаблоном проектирования Iterator)
+
+ Стандартный цикл вывода записей выглядит следующим образом:
+
+\begin{verbatim}
+ CORBA::Boolean more=true;
+ while(more)
+ {
+   UAKGQuery2::RecordSet_var rs = query->fetch(chunkSize,more);
+   ......
+   do something;
+ }
+\end{verbatim}
+
+ т. е.  fetch возвращает chunkSize или меньше записей и устанавливает more в 
+ false, если мы получили все записи запроса.
+
+\subsection { Получение описания  }
+
+ Мы можем получить описание результатов запроса, пользуясь методом
+ \newline
+ \verb|Query::get_parameters_description()|;
+
+ Следующий фрагмент кода возвращает нам описание таблицы, имя которой ввел
+пользователь.
+
+\begin{verbatim}
+  char tablename[MAX_TNAME_LEN];
+  std::cout << "enter table name:";
+  std::cout.flash();
+  std::cin.getline(tablename,MAX_TNAME_LEN); 
+  std::ostrstream ostr;
+  ostr << "select * from " << tablename;
+  Query_var query = queryManager->create_query(ostr.str(),"");
+  ostr.rdbuf()->freeze(0);
+  RecordSet_var tableDescription = query->get_parameters_description(); 
+\end{verbatim}
+
+\section{ Большие объекты (Large OBjects)  }
+
+  Особенности работы с большими объектами базы данных (LOB) заключены в:
+ \begin{itemize}
+   \item трех интерфейсах - Blob, Clob, Wclob
+   \item трех методах интерфейса Query (create\_blob, create\_clob, create\_wclob)
+ \end{itemize}
+  Blob, Clob, Wclob можно указывать как параметры запроса к базе. Объекты этих
+ типов можно получать в строках результата.
+  Для выполнения запроса к базе, параметром которого является LOB, невозможно
+ использовать механизм evaluate. Только Query содержит методы создания LOB-ов
+ для записи. Все LOB, полученные в результате выполнения запросов, предназначены
+ только для чтения.
+  Интерфейсы Blob, Clob и Wclob имеют почти идентичный интерфейс. Они отличаются
+ только в соответствующих типах данных.
+ \begin{itemize}
+   \item Blob предназначен для работы с массивами бинарных данных, единицей
+      которых является октет, используется UAKGQuery::OctSeq;
+   \item Clob - символьные данные, используется CORBA::String;
+   \item Wclob - символьные данные в unicode, используется CORBA::WString;
+ \end{itemize}
+  Рассмотрим интерфейс LOB на примере Blob:
+\begin{verbatim}
+    interface Blob {
+        ///
+        unsigned long length() raises(UAKGQuery2::QueryProcessingError);
+        ///
+        UAKGQuery2::OctSeq fetch_chunk(in unsigned long chunkSize
+                , out boolean more)
+                raises(UAKGQuery2::QueryProcessingError, WriteOnlyLOB);
+        ///
+        void put_chunk(in UAKGQuery2::OctSeq data)
+                raises(UAKGQuery2::QueryProcessingError, ReadOnlyLOB);
+    };
+\end{verbatim}
+  Метод length возвращает длину LOB, в соответствующих единицах (для Blob - 
+ октеты, для Clob - символы, для Wclob - символы unicode). Все размеры
+ указываются в этих единицах.
+  Метод fetch\_chunk может быть вызван для LOB, который получен в результате
+ выполнения запроса select - типа. Он предоставляет механизм для получения
+ фактических данных LOB-а. Аргумент chunkSize определяет максимальный требуемый
+ размер считываемой части LOB. При этом аргумент more сигнализирует о том, есть
+ ли еще данные для чтения. Нулевое значение chunkSize означает требование
+ считать весь LOB целиком.
+  Метод put\_chunk можно вызывать только для LOB, который создан одним из
+ методов Query create\_<B|C|Wc>lob. Аргумент data - фактические данные для
+ записи.
+  При вызове fetch\_chunk и put\_chunk в неверном контексте будет брошено
+ соответствующее исключение (WriteOnlyLOB, ReadOnlyLOB), сигнализирующее о
+ том, что данный LOB предназначен только для записи, либо только для чтения.
+  Методы Query
+\begin{verbatim}
+     /**
+      * request Blob for filling query parameters
+      *@returns empty Blob for writing only.
+      */
+     UKAGQuery2::Blob create_blob()
+             raises(UKAGQuery2::QueryProcessingError);
+
+     /**
+      * request Clob for filling query parameters
+      *@returns empty Clob for writing only.
+      */
+     UKAGQuery2::Clob create_clob()
+             raises(UKAGQuery2::QueryProcessingError);
+
+     /**
+      * request Wclob for filling query parameters
+      *@returns empty Wclob for writing only.
+      */
+     UKAGQuery2::Wclob create_wclob()
+             raises(UKAGQuery2::QueryProcessingError);
+\end{verbatim}
+ возвращают LOB-ы соответствующих типов для записи и дальнейшего связывания с
+ параметрами этой Query.
+ Приведем пример чтения:
+\begin{verbatim}
+    CORBA::String_var sql = CORBA::string_dup("select b from blob_test");
+    CORBA::Boolean more = true;
+    RecordSet_var empty = new RecordSetImpl();
+    try {
+      Query_var q = queryManager->create_query(sql, "");
+      q->prepare(empty);
+      q->execute(empty);
+      RecordSet_var rs = q->fetch_records(1, more);
+      if (rs->getNRows() > 0) {
+          Blob_var bl;
+          try {
+              bl = rs->getBlobAt(0,0);
+          } catch (const InvalidRow& ) {
+              cerr << "InvalidRow" << endl;
+              return;
+          } catch (const InvalidColumn& ) {
+              cerr << "InvalidColumn" << endl;
+              return;
+          } catch (const FieldIsNull& ) {
+          cerr << "FieldIsNull" << endl;
+          } catch (const InvalidFieldType& ) {
+          cerr << "InvalidFieldType" << endl;
+          }
+          FILE* f = fopen("file_from_blob", "wb");
+          OctSeq_var octSeq;
+          long n = 0;
+          for (more=true; more; n++){
+              octSeq = bl->fetch_chunk(chunk_size, more);
+              fwrite(octSeq->get_buffer(), 1, octSeq->length(), f);
+          }
+          fclose(f);
+      } else {
+          cerr << "In database no records" << endl;
+      }
+      q->destroy();
+    } catch(const QueryFlagInvalid& ex) {
+        cerr << "QueryFlagInvalid" << endl;
+        return;
+    } catch(const QueryProcessingError& ex) {
+        cerr << "QueryProcessingError" << endl;
+        cerr << ex.why << endl;
+        return;
+    }
+\end{verbatim}
+ Приведем пример записи:
+\begin{verbatim}
+  UAKGQuery2::OctSeq_var octSeq = new UAKGQuery2::OctSeq();
+  CORBA::ULong chunk_size;
+
+  ...// fill octSeq and choose chunk_size
+
+  RecordSet_var  rs = new RecordSetImpl();
+  rs->addColumn(":params",TypeBlob);
+  rs->addRow();
+  try {
+    Query_var q = queryManager->create_query(
+            "insert into blob_test(b) values(:param)", "");
+    q->prepare(rs);
+    Blob_var bl = q->create_blob();
+    if (chunk_size == 0) {
+        bl->put_chunk(octSeq.in());
+    } else {
+        CORBA::ULong sentLength = 0;
+        CORBA::ULong leftLength = 0;
+        const CORBA::Octet* curr;
+        while (sentLength < octSeq.length()) {
+            curr = octSeq.get_buffer() + sentLength;
+            leftLength = octSeq.length() - sentLength;
+            if (leftLength >= chunk_size)) {
+                bl->put_chunk(OctSeq(chunk_size, chunk_size, curr, 0));
+                sentLength += chunk_size;
+            } else {
+                bl->put_chunk(OctSeq(leftLength, leftLength, curr, 0));
+                sentLength = octSeq.length();
+            }
+        }
+    }
+    rs->setBlobAt(0, 0, bl);
+    q->execute(rs);
+    q->destroy();
+  } catch(const NameInUse& ex ) {
+    cerr << "NameInUse" << endl;
+    return;
+  } catch(const ReadOnluLob& ex) {
+    cerr << "ReadOnlyLOB" << endl;
+    return;
+  } catch(const InvalidRow& ex) {
+    cerr << "InvalidRow" << endl;
+    return;
+  } catch(const InvalidColumn& ex) {
+    cerr << "InvalidColumn" << endl;
+    return;
+  } catch(const InvalidFieldType& ex) {
+    cerr << "InvalidFieldType" << endl;
+    return;
+  } catch(const QueryFlagInvalid& ex) {
+    cerr << "QueryFlagInvalid" << endl;
+    return;
+  } catch(const QueryTypeInvalid& ex) {
+    cerr << "QueryTypeInvalid" << endl;
+    return;
+  } catch(const QueryProcessingError& ex) {
+    cerr << "QueryProcessingError" << endl;
+    cerr << ex.why << endl;
+    return;
+  }
+\end{verbatim}
+
+\section{ Интерфейс QueryManager }
+
+\subsection { Последовательности }
+ 
+NAME
+get\_next\_sequence\_value - возвращает следующее значение последовательности.
+ 
+SYNOPSIS
+\begin{verbatim}
+ long  get_next_sequence_value(in string sequence_name);
+\end{verbatim}
+ 
+DESCRIPTION
+Функция \begin{verbatim} get_next_sequence_value \end{verbatim} берет следующее
+значение из последовательности \begin{verbatim} sequence_name \end{verbatim}
+RETURN VALUE
+get\_next\_sequence\_value возвращает следующее значение из последовательности \begin{verbatim} sequence_name \end{verbatim}.
+ 
+\section { Свойства }
+ 
+NAME
+get\_property
+ 
+SYNOPSIS
+\begin{verbatim}
+ string get\_property(in string property\_name)   raises(PropertyNotDefined);
+\end{verbatim}
+ 
+DESCRIPTION
+Функция  \begin{verbatim} get_property \end{verbatim} возвращает значение присвоенное свойству \begin{verbatim} property_name \end{verbatim} если такое свойство определено и ему присвоено значение иначе возбуждается исключение PropertyNotDefined.
+Доступные свойства :
+\begin{verbatim}
+  collection
+\end{verbatim}
+Если свойство \begin{verbatim}collection\end{verbatim} установлено в "yes" - значит QueryManager поддерживает коллекции.
+ 
+RETURN VALUE
+get\_property  return value of property if such exist and have a value, else function raise PropertyNotDefined exception.
+
+\section{ Транзакции  }
+
+ В UAKGQueryService реализованы 2 режима транзакций:
+ \begin{enumerate}
+   \item XA транзакции, использующие XA ресурс нижележащей БД и XA монитор
+     ORBacus Transaction Service.
+   \item Собственный менеджер транзакций, использующий прямые транзакции БД.
+ \end{enumerate}
+
+ XA менеджер транзакций удобно применять в том случае, если ваш сервер приложений работает
+ с одной DB в XA окружении, с другой стороны, менеджер транзакций UAKGQuery более эффективный.
+ 
+ Рассмотрим каждый из этих режимов подробнее:
+
+ \subsubsection{XA транзакции}
+
+  Использование XA транзакций инициируется следующими ключами:
+ \begin{itemize}
+   \item \verb|ORACLE_XA=<xa-open-string>| - для Oracle
+   \item \verb|INTERBASE_XA=<xa-open-string>| - для Interbase.
+ \end{itemize}
+  
+ Где \verb|<xa-open-string>| -- строка XA, в которой указаны параметры
+соединения базы данных. Для более подробного рассмотрения XA строки, 
+обратитесь к документации соответствующей БД.
+ \begin{itemize}
+  \item Oracle:
+   \verb|http://technet.oracle.com/doc/server.815/a68003/01_app1x.htm#619504|
+  \item Interbase:
+    InterBase Programming Guide.
+ \end{itemize}
+
+ При работе с XA транзакциями существуют следующие ограничения:
+
+ \begin{enumerate}
+  \item так как соединения с сервером производятся XA монитором, то только
+  одни параметры подключения (login и пароль пользователя базы) могут 
+   использоваться. Параметры \verb|username| и \verb|password| 
+ DBConnectionManager::create\_query\_manager игнорируются.
+  Если вы хотите добиться одновременной работы нескольких подключений в
+ XA режиме, вы должны запустить несколько копий UAKGQueryService.
+  \item В XA приложении нельзя использовать DDL предложения.
+  \item В XA приложении нельзя вызывать методы UAKGQuery вне контекста 
+   транзакции.
+  \item Так как XA монитор должен быть осведомлен о создании каждого нового
+   потока исполнения, XA CORBA сервер должен использовать режим потоков
+   исполнения \verb|thread_per_request|
+ \end{enumerate}
+
+
+ \subsubsection{UAKG OTS транзакции}.
+
+  Режим UAKG OTS транзакций используется по умолчанию.
+ 
+ В отличие от XA транзакций, при использовании UAKG транзакций параметры
+подключения к базе данных определяются на этапе создания QueryManager-а. 
+При этом методы работы с БД можно вызывать как в контексте глобальной
+транзакции, так и без: в этом случае обращение к БД будет рассматриваться как
+локальная транзакция, которая автоматически завершается по окончании
+работы запроса. 
+ 
+
+\subsection{Типичное использование транзакций}
+
+Ниже приведен фрагмент кода, иллюстрирующий типичное использование
+OTS:
+
+\begin{verbatim}
+
+ Object_var obj = orb->resolve_initial_references("TransactionCurrent");
+ CosTransactions::Current_var current = 
+                                 CosTransactions::Current::_narrow(obj);
+
+ current->begin();
+ try {
+
+   // do something with db:
+   queryManger->evaluate(query1,"SQL92", Params1);
+   queryManger->evaluate(query2,"SQL92", Params2);
+
+   current->commit();
+
+ }catch(const QueryProcessingError& ex){
+
+   current->rollback();
+
+ }catch(...){
+   cerr << "Fatal: unknown exception";
+   current->rollback();
+ }
+\end{verbatim}
+
+ Т. е. типичное применение транзакций -- обеспечение атомарности 
+последовательности операции над базой данных: операция либо полностью
+завершится, либо будет полностью отменена. Для более подробной информации,
+рекомендуем 
+ \cite{OMG-COS-OTS} ,  \cite{XOPEN-XA}.
+
+
+
+
+\section{ Приложение 1: IDL спецификации}
+\begin{verbatim}
+#ifndef __UAKGQuery_idl
+#define __UAKGQuery_idl
+
+
+#pragma prefix "gradsoft.kiev.ua"
+
+/**
+ * UAKGQuery module
+ **/
+module UAKGQuery2 
+{
+
+    ///
+    exception QueryProcessingError 
+    { 
+        ///
+        string why; 
+        ///
+        unsigned long code;
+        ///
+        unsigned long dbCode;
+    };
+
+    ///
+    exception QueryFlagInvalid { 
+        string why;
+    };
+
+    ///
+    exception ReadOnlyLOB {};
+
+    ///
+    exception WriteOnlyLOB {};
+
+    ///
+    exception FieldIsNull {};
+    ///
+    exception InvalidFieldType {};
+    ///
+    exception InvalidRow {};
+    ///
+    exception InvalidColumn {};
+    ///
+    exception InvalidColumnName {};
+    ///
+    exception NameInUse {};
+    ///
+    exception InvalidInputFormat {};
+    ///
+    exception InvalidPrecision {};
+
+    /// 
+    enum QueryStatus 
+    {
+     ///
+     complete, 
+     ///
+     incomplete
+    };
+
+
+    typedef sequence<octet> OctSeq;
+    typedef sequence<string> StringSeq;
+
+    enum FieldType {
+        ///
+        TypeNull,
+        ///
+        TypeBoolean, 
+        ///
+        TypeChar, 
+        ///
+        TypeCharacter, 
+        ///
+        TypeOctet, 
+        ///
+        TypeShort,
+        ///
+        TypeUShort, 
+        ///
+    TypeSmallInt,
+        ///
+        TypeLong, 
+        ///
+        TypeULong, 
+        ///
+        TypeInteger, 
+        ///
+        TypeFloat, 
+        ///
+        TypeReal, 
+        ///
+        TypeDouble,
+        ///
+        TypeDoublePrecision,
+        ///
+        TypeString, 
+        ///
+        /// TypeObject,
+        ///
+        TypeDecimal,
+        ///
+        TypeNumeric,
+        ///
+        TypeDateTime,
+        ///
+        TypeRaw,
+        ///
+        TypeWString,
+        ///
+        TypeBlob,
+        ///
+        TypeClob,
+        ///
+        TypeWclob
+    };
+
+    valuetype Numeric {
+        /**
+         * precision of number.
+         **/
+        public long precision; 
+        /**
+         * scale of number
+         **/
+        public long scale; 
+        /**
+         * valus in BCD format.
+         **/
+        public sequence<octet> value;
+
+        /**
+         *@return string representation of decimal
+         **/ 
+        string getAsString();
+
+        /**
+         *
+         **/
+        void  setAsString(in string str) raises(InvalidInputFormat); 
+
+        /**
+         *
+         **/
+        long  getAsLong()  raises(InvalidPrecision); 
+
+        /**
+         *
+         **/
+        void  setAsLong(in long l);
+
+        /**
+         *
+         **/
+        double  getAsDouble();
+
+        /**
+         *
+         **/
+        void  setAsDouble(in double d);
+    };
+
+    /**
+     * type, corresponding to DATE field.
+     * (all values are start from 1)
+     **/
+    struct DateTime {
+        ///
+        short year;
+        ///
+        octet month;
+        ///
+        octet day;
+        ///
+        octet hour;
+        ///
+        octet minute;
+        ///
+        octet second;
+    };
+
+
+
+    /**
+     * Blob = "Binary Large Object"
+     **/
+    interface Blob {
+        ///
+        unsigned long length() raises(QueryProcessingError);
+        ///
+        OctSeq  fetch_chunk(in unsigned long chunkSize,
+                                      out boolean more)
+                raises(QueryProcessingError, WriteOnlyLOB);
+        ///
+        void put_chunk(in OctSeq data)
+                raises(QueryProcessingError, ReadOnlyLOB);
+
+    };
+
+    /**
+     * Clob = "Char large object"
+     **/
+    interface Clob {
+
+        ///
+        unsigned long length() raises(QueryProcessingError);
+
+        ///
+        string fetch_chunk(in unsigned long chunkSize, out boolean more)
+                                raises(QueryProcessingError, WriteOnlyLOB);
+
+        ///
+        void put_chunk(in string data) 
+                                raises(QueryProcessingError, ReadOnlyLOB);
+                
+
+    };
+
+    /**
+     * Wclob = "Wide character large object"
+     **/
+    interface Wclob {
+        ///
+        unsigned long length() raises(QueryProcessingError);
+        ///
+        wstring fetch_chunk(in unsigned long chunkSize, out boolean more)
+                raises(QueryProcessingError
+                , WriteOnlyLOB);
+        ///
+        void put_chunk(in wstring data) raises(QueryProcessingError
+                , ReadOnlyLOB);
+
+    };
+
+
+    custom valuetype RecordSet
+    {
+        unsigned long getNRows();
+        unsigned long getNColumns();
+
+        void addRow();
+        void addColumn(in string name, in FieldType ft) raises(NameInUse);
+
+        string getColumnNameByIndex(in unsigned long col)
+                                          raises (InvalidColumn);
+
+        unsigned long getColumnIndexByName(in string name)
+                                          raises (InvalidColumnName);
+
+        void setFieldSize(in unsigned long column, in unsigned long len)
+                                              raises (InvalidColumn);
+
+        FieldType  getFieldType(in unsigned long column)
+                                              raises (InvalidColumn,
+                                                      InvalidFieldType);
+
+        unsigned long getFieldSize(in unsigned long column)
+                                              raises (InvalidColumn);
+
+        void setNumericFieldProperties(in unsigned long column,
+                                       in unsigned short precision,
+                                       in unsigned short scale) 
+                                                raises (InvalidColumn,
+                                                        InvalidFieldType,
+                            InvalidPrecision
+                            );
+
+        unsigned short getNumericPrecision(in unsigned long col)
+                                               raises (InvalidColumn,
+                                                       InvalidFieldType);
+
+        unsigned short getNumericScale(in unsigned long col)
+                                               raises (InvalidColumn,
+                                                       InvalidFieldType);
+
+        void dropRow(in unsigned long row) raises (InvalidRow);
+        void dropColumn(in unsigned long col) raises (InvalidColumn);
+
+        boolean isNullAt(in unsigned long row, in unsigned long col)
+                                             raises (InvalidRow, InvalidColumn);
+
+        void setNullAt(in unsigned long row, in unsigned long col)
+                                             raises (InvalidRow, InvalidColumn);
+
+        boolean getBooleanAt(in unsigned long row, in unsigned long col) 
+                                             raises (InvalidRow, InvalidColumn
+                                                     , FieldIsNull
+                                                     , InvalidFieldType);
+
+        void setBooleanAt(in unsigned long row, in unsigned long col
+                          , in boolean v) raises (InvalidRow, InvalidColumn
+                                                  , InvalidFieldType);
+
+        char getCharAt(in unsigned long row, in unsigned long col) 
+                                             raises (InvalidRow, InvalidColumn
+                                                     , FieldIsNull
+                                                     , InvalidFieldType);
+        void setCharAt(in unsigned long row, in unsigned long col, in char v) 
+                                             raises (InvalidRow, InvalidColumn
+                                                     , InvalidFieldType);
+
+        octet getOctetAt(in unsigned long row, in unsigned long col) 
+                                             raises (InvalidRow, InvalidColumn
+                                                     , FieldIsNull
+                                                     , InvalidFieldType);
+        void setOctetAt(in unsigned long row, in unsigned long col, in octet v) 
+                                             raises (InvalidRow, InvalidColumn
+                                                     , InvalidFieldType);
+
+        short getShortAt(in unsigned long row, in unsigned long col) 
+                                             raises (InvalidRow, InvalidColumn
+                                                     , FieldIsNull
+                                                     , InvalidFieldType);
+        void setShortAt(in unsigned long row, in unsigned long col, in short v)
+                                             raises (InvalidRow, InvalidColumn
+                                                     , InvalidFieldType);
+
+        unsigned short getUShortAt(in unsigned long row, in unsigned long col) 
+                                             raises (InvalidRow, InvalidColumn
+                                                     , FieldIsNull
+                                                     , InvalidFieldType);
+        void setUShortAt(in unsigned long row, in unsigned long col
+                         , in unsigned short v)
+                                             raises (InvalidRow, InvalidColumn
+                                                     , InvalidFieldType);
+
+        long getLongAt(in unsigned long row, in unsigned long col) 
+                                             raises (InvalidRow, InvalidColumn
+                                                     , FieldIsNull
+                                                     , InvalidFieldType);
+        void setLongAt(in unsigned long row, in unsigned long col, in long v)
+                                             raises (InvalidRow, InvalidColumn
+                                                     , InvalidFieldType);
+
+        unsigned long getULongAt(in unsigned long row, in unsigned long col) 
+                                             raises (InvalidRow, InvalidColumn
+                                                     , FieldIsNull
+                                                     , InvalidFieldType);
+        void setULongAt(in unsigned long row, in unsigned long col,
+                        in unsigned long v)
+                                             raises (InvalidRow, InvalidColumn
+                                                     , InvalidFieldType);
+
+        float getFloatAt(in unsigned long row, in unsigned long col) 
+                                             raises (InvalidRow, InvalidColumn
+                                                     , FieldIsNull
+                                                     , InvalidFieldType);
+
+
+        void setFloatAt(in unsigned long row, in unsigned long col, in float v)
+                                             raises (InvalidRow, InvalidColumn
+                                                     , InvalidFieldType);
+
+        double getDoubleAt(in unsigned long row, in unsigned long col) 
+                                             raises (InvalidRow, InvalidColumn
+                                                     , FieldIsNull
+                                                     , InvalidFieldType);
+        void setDoubleAt(in unsigned long row, in unsigned long col, in double v)
+                                             raises (InvalidRow, InvalidColumn
+                                                     , InvalidFieldType);
+
+        string getStringAt(in unsigned long row, in unsigned long col) 
+                                             raises (InvalidRow, InvalidColumn
+                                                     , FieldIsNull
+                                                     , InvalidFieldType);
+        void setStringAt(in unsigned long row, in unsigned long col, in string v)
+                                             raises (InvalidRow, InvalidColumn
+                                                     , InvalidFieldType);
+
+        Numeric getNumericAt(in unsigned long row, in unsigned long col) 
+                                             raises (InvalidRow, InvalidColumn
+                                                     , FieldIsNull
+                                                     , InvalidFieldType);
+        void setNumericAt(in unsigned long row, in unsigned long col
+                          , in Numeric v) raises (InvalidRow, InvalidColumn
+                                                     , InvalidFieldType);
+
+        DateTime getDateTimeAt(in unsigned long row, in unsigned long col) 
+                                             raises (InvalidRow, InvalidColumn
+                                                     , FieldIsNull
+                                                     , InvalidFieldType);
+
+
+        void setDateTimeAt(in unsigned long row, in unsigned long column,
+                           in DateTime v) 
+                            raises (InvalidRow, InvalidColumn,
+                                                         InvalidFieldType);
+
+        OctSeq getRawAt(in unsigned long row, in unsigned long col) 
+                                     raises (InvalidRow, InvalidColumn,
+                                             FieldIsNull,InvalidFieldType);
+                                                     
+        void setRawAt(in unsigned long row, in unsigned long col
+                          , in OctSeq v) raises (InvalidRow, InvalidColumn
+                                                     , InvalidFieldType);
+
+        wstring getWStringAt(in unsigned long row, in unsigned long column) 
+                                         raises (InvalidRow, InvalidColumn,
+                                                 FieldIsNull, InvalidFieldType);
+                                                     
+        void setWStringAt(in unsigned long row, in unsigned long col
+                          , in wstring v) raises (InvalidRow, InvalidColumn
+                                                     , InvalidFieldType);
+
+        Blob getBlobAt(in unsigned long row, in unsigned long column) 
+                                        raises (InvalidRow, InvalidColumn,
+                                                FieldIsNull,InvalidFieldType);
+                                                      
+        void setBlobAt(in unsigned long row, in unsigned long column
+                          , in Blob v) raises (InvalidRow, InvalidColumn,
+                                                           InvalidFieldType);
+
+        Clob getClobAt(in unsigned long row, in unsigned long col) 
+                                      raises (InvalidRow, InvalidColumn,
+                                              FieldIsNull,InvalidFieldType);
+                                                    
+        void setClobAt(in unsigned long row, in unsigned long col
+                          , in Clob v) raises (InvalidRow, InvalidColumn
+                                                     , InvalidFieldType);
+
+        Wclob getWclobAt(in unsigned long row, in unsigned long col) 
+                                             raises (InvalidRow, InvalidColumn
+                                                     , FieldIsNull
+                                                     , InvalidFieldType);
+        void setWclobAt(in unsigned long row, in unsigned long col
+                          , in Wclob v) raises (InvalidRow, InvalidColumn
+                                                     , InvalidFieldType);
+
+        string getAsStringAt(in unsigned long row, 
+                             in unsigned long column,
+                             in string nullValue)
+                                          raises (InvalidRow, InvalidColumn);
+
+        factory create();
+
+    };
+
+     
+    ///
+    exception QueryNotPrepared {};
+    ///
+    exception InvalidParameterName{};
+    ///
+    exception InvalidParameterType{};
+    ///
+    exception PropertyNotDefined{};
+
+
+   /**
+    * Hight level interface for evaluationg SQL queries
+    **/
+   interface QueryEvaluator
+                         //   :CosTransactions::TransactionalObject
+                         // obsoleted.
+   {
+
+     /**
+      * evaluate query <code> queryText </code> and return result
+      *@param queryText -- text of query
+      *@param queryFlags -- flags for query executing
+      *@param rs -- input parameters.
+      *@param params -- input parameters as RC-coded octet sequence
+      *@return result of query
+      **/
+     RecordSet evaluate(in string queryText, in string queryFlags,
+                        in RecordSet rs)
+              raises(QueryFlagInvalid, QueryProcessingError);
+
+     /**
+      * evaluate query <code> queryText </code> without parameters
+      * and return result
+      *@param queryText -- text of query
+      *@param queryFlags -- flags for query executing
+      *@return result of query
+      **/
+     RecordSet evaluate_e(in string queryText, in string queryFlags)
+              raises(QueryFlagInvalid, QueryProcessingError);
+
+     /**
+      * evaluate query <code> queryText </code>, fill out and inout 
+      * parameters of queury and return result
+      *@param queryText -- text of query
+      *@param queryFlags -- flags for query executing
+      *@param rs -- inout parameters.
+      *@param params -- input parameters as RC-coded octet sequence
+      *@return result of query
+      **/
+     RecordSet evaluate_inout(in string queryText, in string queryFlags,
+                        inout RecordSet rs)
+              raises(QueryFlagInvalid, QueryProcessingError);
+
+      ///
+      long  get_next_sequence_value(in string sequence_name)
+                        raises(QueryProcessingError, QueryFlagInvalid);
+
+
+   };
+
+
+
+   interface Query;
+   interface QueryManager;
+
+   /**
+    * this is interface for UAKG Query
+    * Query is SQL text with set of parameters: prepare parameters and 
+    * execute parameters.
+    *  prepare parameters are descriptionas of appropriative execute parameters
+    *  execute parameters are SQL host valiables.
+    * i. e. let we have query (SELECT * from T where x=:x and y=:y);
+    * than prepare query have type RecordDescription and consist from
+    * FieldDescription of :x and :y.
+    * execute query are values of :x and :y (or sequence of pair of values
+    * for multiple evaluated query).
+    */
+   interface Query
+   {
+
+     /**
+      *@return owner of query
+      **/
+     readonly attribute QueryManager query_mgr;
+
+     /**
+      *@return text of query.
+      */
+     readonly attribute string  queryText;
+ 
+
+     /**
+      * return status of query: i.e: 
+      *  complete when query is executed, otherwise incomplete
+      */
+     QueryStatus get_status ();
+
+
+     /**
+      * prepare query for executing.
+      * if query have no parameters, paramsDescription must be empty 
+      * sequence.
+      */
+     void prepare_query(in RecordSet paramsDescription)
+                   raises(QueryProcessingError);
+
+     /**
+      * synonim for prepare_query 
+      **/
+     void prepare(in RecordSet paramsDescription)
+                   raises(QueryProcessingError);
+
+
+     /**
+      * execute query
+      *@params octSeq_  records of execute parameters
+      * (note, that prepare parameters is record descriptio of execute
+      *  record).
+      **/
+     void execute(in RecordSet rs)
+                            raises(QueryProcessingError);
+
+     /**
+      * execute query with no parameters
+      **/
+     void execute_e() raises(QueryProcessingError);
+
+     /**
+      * execute query with inout parameters
+      *@params octSeq_  records of execute parameters
+      **/
+     void execute_inout(inout RecordSet rs)
+                            raises(QueryProcessingError);
+     
+
+     /**
+      * get description of records parameters
+      *@precondition
+      * must be called after prepare
+      **/
+     RecordSet  get_parameters_description()
+                               raises(QueryProcessingError);
+
+     ///
+     RecordSet get_all_parameters() 
+                               raises(QueryProcessingError);
+
+     ///
+     RecordSet get_parameters(in StringSeq neededFields)
+                               raises(QueryProcessingError,
+                                      InvalidParameterName);
+
+     /**
+      *@returns number of fetched rows.
+      */
+     unsigned long  get_row_count()
+                       raises(QueryProcessingError);
+
+     /**
+      * fetch query result in records.
+      * @param numberOfRecords -- number of records to fetch.
+      *        0 means, that we want to fetch all records.
+      * @param more -- true, if status is incomplete (i.e. we can query
+      * more results), otherwise false.
+      * @returns fetched rows packed in RC coding to octet sequence.
+      **/
+     RecordSet  fetch(in unsigned long numberOfRecords, out boolean more)
+                       raises(QueryProcessingError);
+
+     /**
+      * synonim for fetch_rc.
+      */
+     RecordSet  get_result(in unsigned long numberOfRecords, out boolean more)
+                       raises(QueryProcessingError);
+
+
+     /**
+      * skip N records without retrieving.
+      *@returns actual number of skipped records.
+      */
+     unsigned   long  skip(in unsigned long numberOfRecords,
+                           out boolean more)
+                       raises(QueryProcessingError);
+
+
+     /**
+      * request Blob for filling query parameters
+      *@returns empty Blob for writing only.
+      */
+     Blob create_blob() raises(QueryProcessingError);
+
+     /**
+      * request Clob for filling query parameters
+      *@returns empty Clob for writing only.
+      */
+     Clob create_clob() raises(QueryProcessingError);
+
+     /**
+      * request Wclob for filling query parameters
+      *@returns empty Wclob for writing only.
+      */
+     Wclob create_wclob() raises(QueryProcessingError);
+
+     /**
+      * destroy query, which not longer needed
+      **/
+     void        destroy();
+
+   };
+
+
+   /**
+    * interface for our QueryManager.
+    */
+   interface QueryManager: QueryEvaluator
+   {
+      ///
+      string get_username()  raises(QueryProcessingError);
+      ///
+      string get_dblink()  raises(QueryProcessingError);
+
+      ///
+      Query create_query(in string query, in string flags)
+                         raises(QueryFlagInvalid);
+
+      ///
+      Query create(in string query, in string flags)
+                         raises(QueryFlagInvalid);
+
+      ///
+      string get_property(in string property_name)
+                          raises(PropertyNotDefined);
+
+      
+      ///
+      void destroy();
+
+   };
+
+    ///
+    exception QueryManagerNotFound {};
+    
+    typedef sequence<QueryManager>  UAKGQueryManagerSeq;
+
+    ///
+    interface DBConnectionManager
+    {
+     ///
+     QueryManager create_query_manager(in string login, 
+                                       in string password, 
+                                       in string db_name, 
+                                       in string drv_name,
+                                       in string implementation_specific_data)
+                                     raises(QueryManagerNotFound,
+                                            QueryProcessingError);
+
+     /**
+      * shutdown query service.
+      **/
+     void shutdown();
+
+    };
+
+};
+
+#endif
+\end{verbatim}
+
+
+
+\section{ Приложение 2: Совместимость версий и миграция}
+
+Версия UAKGQuery 2 несовместима с предидущей однако
+допускает постепенный перенос программы
+путём компиляции одновременно с первой и второй версиями.
+Для сохранеия такой возможности при передаче ссылок на Query рекомендуется
+проектировать программу так, чтобы
+она принимала ссылку на UAKGQuery первой версии под псевдонимом "UAKGQueryService",
+а для второй версии - "UAKGQueryService2".
+
+
+
+
+\section{ Перечень изменений }
+
+\begin{itemize}
+ \item[26.12.2002] - Добавлен раздел, посвящённый совместимости версий.
+ \item[17.10.2002] - исправлены опечатки.
+ \item[22.08.2002] - переработан раздел о типах данных.
+ \item[20.06.2002] - переработано на RecordSet.
+ \item[24.01.2002] - грамматические правки, компиляция под Windows NT
+ \item[21.01.2002] - описана работа с большими объектами (LOB)
+ \item[18.01.2002] - добавлены некоторые пространства имен
+ , приведено в соответствие с текущими idl.
+ \item[19.06.2001] - добавлено описание инициализации.
+ \item[06.06.2001] - отредактирован.
+ \item[08.05.2001] - добавлена грамматика, просмотр.
+ \item[16.04.2001] - добавлены приложения, первая публичная версия.
+ \item[26.03.2000] - первая версию.
+\end{itemize}
+
+\bibliography{Bib}
+
+\end{document}

@@ -1,0 +1,121 @@
+#ifndef CORBA_H
+#undef CORBA_H
+#endif
+
+#ifndef ORBACUS
+#undef ORBACUS
+#endif
+
+#ifndef RSSH_TAO
+#undef RSSH_TAO
+#endif
+
+#ifndef MICO
+#undef MICO
+#endif
+
+#ifndef OMNIORB
+#undef OMNIORB
+#endif
+
+#ifndef CORBA_HAVE_POA
+#undef CORBA_HAVE_POA
+#endif
+
+#ifndef COSNAMING_H
+#undef  COSNAMING_H
+#endif
+
+#ifndef CORBA_MODULE_NAMESPACE_MAPPING
+#undef CORBA_MODULE_NAMESPACE_MAPPING
+#endif
+
+#ifndef CORBA_MODULE_CLASS_MAPPING
+#undef CORBA_MODULE_CLASS_MAPPING
+#endif
+
+#ifndef CORBA_MODULE_C_MAPPING
+#undef CORBA_MODULE_C_MAPPING
+#endif
+
+#ifndef IDL_CLN_H_SUFFIX
+#undef IDL_CLN_H_SUFFIX
+#endif
+
+#ifndef IDL_CLN_H_BEFOREDOT_SUFFIX
+#undef IDL_CLN_H_BEFOREDOT_SUFFIX
+#endif
+
+#ifndef IDL_CLN_H_EXT
+#undef IDL_CLN_H_EXT
+#endif
+
+#ifndef IDL_SRV_H_SUFFIX
+#undef IDL_SRV_H_SUFFIX
+#endif
+
+#ifndef CORBA_ORB_INIT_HAVE_3_ARGS
+#undef CORBA_ORB_INIT_HAVE_3_ARGS
+#endif
+
+#ifndef CORBA_ORB_INIT_THIRD_ARG
+#undef CORBA_ORB_INIT_THIRD_ARG
+#endif
+
+#ifndef CORBA_SYSTEM_EXCEPTION_IS_STREAMBLE
+#undef CORBA_SYSTEM_EXCEPTION_IS_STREAMBLE
+#endif
+
+#ifndef HAVE_TYPENAME
+#undef HAVE_TYPENAME
+#endif
+
+#ifndef HAVE_NAMESPACES
+#undef HAVE_NAMESPACES
+#endif
+
+#ifndef HAVE_BOOL
+#undef HAVE_BOOL
+#endif
+
+#ifndef HAVE_MAP
+#undef HAVE_MAP
+#endif
+
+#ifndef HAVE_MAP_H
+#undef HAVE_MAP_H
+#endif
+
+#ifndef HAVE_SET
+#undef HAVE_SET
+#endif
+
+#ifndef HAVE_SET_H
+#undef HAVE_SET_H
+#endif
+
+#ifndef HAVE_DEQUE
+#undef HAVE_DEQUE
+#endif
+
+#ifndef HAVE_DEQUE_H
+#undef HAVE_DEQUE_H
+#endif
+
+#ifndef WORDS_BIGENDIAN
+#undef  WORDS_BIGENDIAN
+#endif
+
+#ifndef CORBA_HAVE_OTS
+#undef CORBA_HAVE_OTS
+#endif
+
+#ifndef HAVE_IOSTREAM
+#undef HAVE_IOSTREAM
+#endif
+
+#ifndef HAVE_IOSTREAM_H
+#undef HAVE_IOSTREAM_H
+#endif
+
+
