@@ -102,6 +102,10 @@ dnl
     then
       LIBS="$LIBS -lnnz10"
     fi
+    if test -f $ORACLE_LIBDIR/libnnz11.so
+    then
+      LIBS="$LIBS -lnnz11"
+    fi
   else
     found=no
     # search as libcntlsh.so.xx.xx
