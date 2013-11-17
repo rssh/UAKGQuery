@@ -428,6 +428,15 @@ void UAKGQueryBase::setField( RecordSet* rs, CORBA::ULong row, CORBA::ULong col,
       case TypeWclob:
             rs->setWclobAt(row,col,ft.getWclob_());
             break;
+      case TypeLongLong:
+            rs->setLongLongAt(row,col,ft.getLongLong());
+            break;
+      case TypeULongLong:
+            rs->setULongLongAt(row,col,ft.getULongLong());
+            break;
+      default:
+          errors() << "Unknown field type to set: " << ft.getType() <<
+                     "[ " __FILE__ << ":" << __LINE__ << "]" << endl;
      }
 }
 
@@ -520,6 +529,15 @@ void UAKGQueryBase::getField(RecordSet* rs,
                 fld.setWclob(wcl);
             }
             break;
+      case TypeLongLong:
+            fld.setLongLong(rs->getLongLongAt(row,col));
+            break;
+      case TypeULongLong:
+            fld.setULongLong(rs->getULongLongAt(row,col));
+            break;
+      default:
+          errors() << "Unknown field type to get:" << rs->getFieldTypeAt(col) <<
+                     "[ " __FILE__ << ":" << __LINE__ << "]" << endl;
      }
 }
 

@@ -255,6 +255,12 @@ void  QueryApplication::printRecordSet(std::ostream& out, UAKGQuery2::RecordSet*
             case UAKGQuery2::TypeULong:
                    out << rs->getULongAt(row,col);
                    break;
+            case UAKGQuery2::TypeLongLong:
+                   out << rs->getLongLongAt(row,col);
+                   break;
+            case UAKGQuery2::TypeULongLong:
+                   out << rs->getULongLongAt(row,col);
+                   break;
             case UAKGQuery2::TypeFloat:
                    out << rs->getFloatAt(row,col);
                    break;

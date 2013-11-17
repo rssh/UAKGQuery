@@ -37,5 +37,12 @@ END;
 
 show errors procedure t1685_proc;
 
+REM GH_1
+
+create table gh1 (
+  ID NUMBER(15) primary key,
+  v  VARCHAR(20)
+);
+
 
 

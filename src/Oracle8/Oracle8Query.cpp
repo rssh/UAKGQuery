@@ -169,7 +169,6 @@ void Oracle8Query::prepare_internal()
 
     rebind();
 
-   
     RecordSet_var r_rs = buildResultBindDescription();
     setResultBindDescription(r_rs);
     setResultOCIDefs(r_rs);
@@ -404,7 +403,6 @@ RecordSet* Oracle8Query::buildResultBindDescription()
  names_set used_names;
  unsigned short  field_index = 1;
     
-
  checkError(OCIAttrGet((dvoid*)ociStmt_p_,(ub4)OCI_HTYPE_STMT,
                        &stmtType,(ub4 *)NULL,(ub4)OCI_ATTR_STMT_TYPE,
                        ociError_p()
@@ -1028,7 +1026,6 @@ void Oracle8Query::rebind()
 
  
         _fdsize = correctFieldSizeForBind(externalIdType,fdtype,fdsize);
-
 
         checkError
         (

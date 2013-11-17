@@ -78,7 +78,13 @@ void UAKGQueryUtils::printFieldDescription(ostream& out,
         out << "Long" ;
         break;
   case TypeULong:
-        out << "CORBA::ULong" ;
+        out << "ULong" ;
+        break;
+  case TypeLongLong:
+        out << "LongLong" ;
+        break;
+  case TypeULongLong:
+        out << "ULongLong" ;
         break;
   case TypeFloat:
         out << "Float" ;
@@ -156,8 +162,14 @@ void UAKGQueryUtils::printFieldType(ostream& out, FieldType ft)
   case TypeLong:
         out << "Long" ;
         break;
+  case TypeLongLong:
+        out << "LongLong" ;
+        break;
   case TypeULong:
         out << "ULong" ;
+        break;
+  case TypeULongLong:
+        out << "ULongLong" ;
         break;
   case TypeFloat:
         out << "Float" ;
@@ -249,6 +261,12 @@ void UAKGQueryUtils::printRecordSet(ostream& out, RecordSet* rs)
 	           break;
 	    case TypeULong:
 	           out << rs->getULongAt(row,col);
+	           break;
+	    case TypeLongLong:
+	           out << rs->getLongLongAt(row,col);
+	           break;
+	    case TypeULongLong:
+	           out << rs->getULongLongAt(row,col);
 	           break;
 	    case TypeFloat:
 	           out << rs->getFloatAt(row,col);
