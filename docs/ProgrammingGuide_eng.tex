@@ -1,7 +1,6 @@
 
 \documentclass[10pt]{article}
 \usepackage[OT2,T2A]{fontenc}
-\usepackage[koi8-u]{inputenc}
 \usepackage{graphicx}
 \usepackage{verbatim}
 
@@ -285,7 +284,7 @@ definitions:
       ///
       case TypeString : string str;
       ///
-      case TypeObject : Object obj;
+      /// case TypeObject : Object obj;
       ///
       case TypeSmallInt : short si;
       ///
@@ -350,6 +349,8 @@ definitions:
      TypeBlob & CosQueryCollection::Blob & BLOB & BLOB \\
      TypeClob & CosQueryCollection::Clob & CLOB & BLOB \\
      TypeWclob & CosQueryCollection::Wclob & NCLOB & BLOB \\ \hline
+     TypeLongLong & long long    & NUMBER(19,0)   & INTEGER  \\
+     TypeULongLong & unsigned long long    & NUMBER(19,0)   & INTEGER  \\
    \end{array}
   $$
 \end{footnotesize}

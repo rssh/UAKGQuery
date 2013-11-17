@@ -74,6 +74,26 @@ static void writeLong( CORBA::Long value,
   octSeq[pos++] = (value >> 24);
 }
 
+static void writeLongLong(CORBA::LongLong value, 
+                          CORBA::ULong& pos, 
+                          CORBA::OctetSeq& octSeq)
+{
+#ifdef PRINT_POSITION
+  cout << "WriteLongLong=" << pos << endl;
+#endif
+  enlarge(8,pos,octSeq);
+  octSeq[pos++] = (value & 0xff);
+  octSeq[pos++] = (value >> 8);
+  octSeq[pos++] = (value >> 16);
+  octSeq[pos++] = (value >> 24);
+  octSeq[pos++] = (value >> 32);
+  octSeq[pos++] = (value >> 40);
+  octSeq[pos++] = (value >> 48);
+  octSeq[pos++] = (value >> 56);
+}
+
+
+
 static void writeFloat( CORBA::Float value, 
             CORBA::ULong& pos, 
             CORBA::OctetSeq& octSeq)
@@ -86,6 +106,8 @@ static void writeFloat( CORBA::Float value,
   memcpy(&ua,&value,sizeof(CORBA::Float));
   writeLong(ua,pos,octSeq);
 }
+
+
 
 static void writeDouble(CORBA::Double value, 
             CORBA::ULong& pos, 
@@ -123,6 +145,8 @@ static void writeDouble(CORBA::Double value,
   octSeq[pos++] = cv[7];
 #endif
 }
+
+
 
 static void writeString(const char* value, 
             CORBA::ULong& pos, 
@@ -275,6 +299,21 @@ static CORBA::Long readLong(CORBA::ULong& pos,
  pos+=4;
  return retval;
 }
+
+static CORBA::LongLong readLongLong(CORBA::ULong& pos,
+                            const CORBA::OctetSeq& octSeq)
+{
+#ifdef PRINT_POSITION
+ cout << "ReadLongLong:" << pos << endl;
+#endif
+ const CORBA::Octet* cur = octSeq.get_buffer()+pos;
+ CORBA::LongLong b1 = cur[0]+(cur[1]<<8)+(cur[2]<<16)+(cur[3]<<24);
+ CORBA::LongLong b2 = cur[4]+(cur[5]<<8)+(cur[6]<<16)+(cur[7]<<24);
+ CORBA::LongLong retval = b1 + (b2 << 32);
+ pos+=8;
+ return retval;
+}
+
 
 static CORBA::Float readFloat(CORBA::ULong& pos,
                               const CORBA::OctetSeq& octSeq)
@@ -474,6 +513,8 @@ void Field::setField(const Field& fld)
     case TypeBlob:     setBlob(fld.getBlob_()); break;
     case TypeClob:     setClob(fld.getClob_()); break;
     case TypeWclob:    setWclob(fld.getWclob_()); break;
+    case TypeLongLong:    setLongLong(fld.getLongLong()); break;
+    case TypeULongLong:   setULongLong(fld.getULongLong()); break;
  }
  type_ = fld.type_;
 }
@@ -496,57 +537,63 @@ void Field::write(CORBA::OctetSeq& seq, CORBA::ULong& pos)
      switch (type_) {
     case TypeNull:
         break;
-        case TypeBoolean:
+    case TypeBoolean:
         writeOctet(static_cast<CORBA::Octet>(value_.b), pos, seq);
         break;
-        case TypeChar:
+    case TypeChar:
         writeOctet(static_cast<CORBA::Octet>(value_.c), pos, seq);
         break;
-        case TypeOctet:
+    case TypeOctet:
         writeOctet(value_.o, pos, seq);
         break;
-        case TypeShort:
+    case TypeShort:
         writeShort(value_.s, pos, seq);
         break;
-        case TypeUShort:
+    case TypeUShort:
         writeShort(value_.us, pos, seq);
         break;
-        case TypeLong:
+    case TypeLong:
         writeLong(value_.l, pos, seq);
         break;
-        case TypeULong:
+    case TypeULong:
         writeLong(value_.ul, pos, seq);
         break;
-        case TypeFloat:
+    case TypeFloat:
         writeFloat(value_.f, pos, seq);
         break;
-        case TypeDouble:
+    case TypeDouble:
         writeDouble(value_.d, pos, seq);
         break;
-        case TypeString:
+    case TypeString:
         writeString(value_.str, pos, seq);
         break;
-        case TypeNumeric:
-        case TypeDecimal:
-    writeNumeric(value_.num_p, pos, seq);
-    break;
-        case TypeDateTime:
+    case TypeNumeric:
+    case TypeDecimal:
+        writeNumeric(value_.num_p, pos, seq);
+        break;
+    case TypeDateTime:
         writeDateTime(value_.dt, pos, seq);
         break;
-        case TypeRaw:
-          writeRaw(value_.raw_p, pos, seq);
-          break;
-        case TypeWString:
-          writeWString(value_.wstr, pos, seq);
-          break;
-        case TypeBlob: 
+    case TypeRaw:
+        writeRaw(value_.raw_p, pos, seq);
+        break;
+    case TypeWString:
+        writeWString(value_.wstr, pos, seq);
+        break;
+    case TypeBlob: 
         writeObject(value_.bl, pos, seq);
         break;
-        case TypeClob:
+    case TypeClob:
         writeObject(value_.cl, pos, seq);
         break;
-        case TypeWclob:
+    case TypeWclob:
         writeObject(value_.wcl, pos, seq);
+        break;
+    case TypeLongLong:
+        writeLongLong(value_.ll, pos, seq);
+        break;
+    case TypeULongLong:
+        writeLongLong(value_.ull, pos, seq);
         break;
      }
 }
@@ -609,6 +656,12 @@ void Field::read(CORBA::Octet fieldType,
                 break;
         case TypeWclob:
                 value_.wcl = readWclob(pos, seq);
+                break;
+        case TypeLongLong:
+                value_.ll = readLongLong(pos, seq);
+                break;
+        case TypeULongLong:
+                value_.ull = readLongLong(pos, seq);
                 break;
      }
 }
@@ -973,7 +1026,7 @@ RecordSetImpl::setNumericFieldPropertiesAt(CORBA::ULong col,
                                          CORBA::UShort scale)
 {
     checkColumn(col);
-    checkType(col,TypeNumeric);
+    //isNotType(col,TypeNumeric)
     pr_[col] = precision;
     sc_[col] = scale;
 }
@@ -981,7 +1034,7 @@ RecordSetImpl::setNumericFieldPropertiesAt(CORBA::ULong col,
 CORBA::UShort RecordSetImpl::getNumericPrecisionAt(CORBA::ULong col)
 {
     checkColumn(col);
-    checkType(col,TypeNumeric);
+    if (ct_[col] != TypeNumeric) throw InvalidFieldType();
     return pr_[col];
 }
 
@@ -1094,7 +1147,7 @@ RecordSetImpl::getBooleanAt(CORBA::ULong row,
 {
     checkCell(row,col); 
     checkNull(row,col);
-    if ( checkType(col,TypeBoolean) ) throw InvalidFieldType();
+    if ( isNotType(col,TypeBoolean) ) throw InvalidFieldType();
     return tbl_[row][col].getBoolean();
 }
 
@@ -1107,7 +1160,7 @@ RecordSetImpl::setBooleanAt(CORBA::ULong row,
                             CORBA::Boolean v)
 {
     checkCell(row,col); 
-    if ( checkType(col,TypeBoolean) ) throw InvalidFieldType();
+    if ( isNotType(col,TypeBoolean) ) throw InvalidFieldType();
     tbl_[row][col].setBoolean(v);
 }
 
@@ -1120,8 +1173,8 @@ RecordSetImpl::getCharAt(CORBA::ULong row,
 {
     checkCell(row,col); 
     checkNull(row,col);
-    if ( checkType(col,TypeChar) && 
-         checkType(col,TypeCharacter)  ) throw InvalidFieldType();
+    if ( isNotType(col,TypeChar) && 
+         isNotType(col,TypeCharacter)  ) throw InvalidFieldType();
     return tbl_[row][col].getChar();
 }
 
@@ -1134,8 +1187,8 @@ RecordSetImpl::setCharAt(CORBA::ULong row,
                                      CORBA::Char v)
 {
     checkCell(row,col); 
-    if ( checkType(col,TypeChar) && 
-         checkType(col,TypeCharacter)  ) throw InvalidFieldType();
+    if ( isNotType(col,TypeChar) && 
+         isNotType(col,TypeCharacter)  ) throw InvalidFieldType();
     tbl_[row][col].setChar(v);
 }
 
@@ -1147,7 +1200,7 @@ RecordSetImpl::getOctetAt(CORBA::ULong row, CORBA::ULong col)
 {
     checkCell(row,col); 
     checkNull(row,col);
-    if ( checkType(col,TypeOctet) ) throw InvalidFieldType();
+    if ( isNotType(col,TypeOctet) ) throw InvalidFieldType();
     return tbl_[row][col].getOctet();
 }
 
@@ -1159,7 +1212,7 @@ RecordSetImpl::setOctetAt(CORBA::ULong row, CORBA::ULong col,
                           CORBA::Octet v)
 {
     checkCell(row,col); 
-    if ( checkType(col,TypeOctet) ) throw InvalidFieldType();
+    if ( isNotType(col,TypeOctet) ) throw InvalidFieldType();
     tbl_[row][col].setOctet(v);
 }
 
@@ -1171,9 +1224,9 @@ RecordSetImpl::getShortAt(CORBA::ULong row, CORBA::ULong col)
 {
     checkCell(row,col); 
     checkNull(row,col);
-    if ( checkType(col,TypeShort)  &&
-         checkType(col,TypeUShort) &&
-         checkType(col,TypeSmallInt) )  throw InvalidFieldType();
+    if ( isNotType(col,TypeShort)  &&
+         isNotType(col,TypeUShort) &&
+         isNotType(col,TypeSmallInt) )  throw InvalidFieldType();
     return tbl_[row][col].getShort();
 }
 
@@ -1185,9 +1238,9 @@ RecordSetImpl::setShortAt(CORBA::ULong row, CORBA::ULong col,
                           CORBA::Short v)
 {
     checkCell(row,col); 
-    if ( checkType(col,TypeShort)  &&
-         checkType(col,TypeUShort) &&
-         checkType(col,TypeSmallInt) )  throw InvalidFieldType();
+    if ( isNotType(col,TypeShort)  &&
+         isNotType(col,TypeUShort) &&
+         isNotType(col,TypeSmallInt) )  throw InvalidFieldType();
     tbl_[row][col].setShort(v);
 }
 
@@ -1199,9 +1252,9 @@ RecordSetImpl::getUShortAt(CORBA::ULong row, CORBA::ULong col)
 {
     checkCell(row,col); 
     checkNull(row,col);
-    if ( checkType(col,TypeShort)  &&
-         checkType(col,TypeUShort) &&
-         checkType(col,TypeSmallInt) )  throw InvalidFieldType();
+    if ( isNotType(col,TypeShort)  &&
+         isNotType(col,TypeUShort) &&
+         isNotType(col,TypeSmallInt) )  throw InvalidFieldType();
     return tbl_[row][col].getUShort();
 }
 
@@ -1213,9 +1266,9 @@ RecordSetImpl::setUShortAt(CORBA::ULong row, CORBA::ULong col,
                            CORBA::UShort v)
 {
     checkCell(row,col); 
-    if ( checkType(col,TypeShort)  &&
-         checkType(col,TypeUShort) &&
-         checkType(col,TypeSmallInt) )  throw InvalidFieldType();
+    if ( isNotType(col,TypeShort)  &&
+         isNotType(col,TypeUShort) &&
+         isNotType(col,TypeSmallInt) )  throw InvalidFieldType();
     tbl_[row][col].setShort(v);
 }
 
@@ -1227,9 +1280,21 @@ RecordSetImpl::getLongAt(CORBA::ULong row, CORBA::ULong col)
 {
     checkCell(row,col); 
     checkNull(row,col);
-    if ( checkType(col,TypeLong)  &&
-         checkType(col,TypeULong) &&
-         checkType(col,TypeInteger) )  throw InvalidFieldType();
+    if (   isType(col,TypeLongLong) 
+        || isType(col,TypeULongLong)) {
+      CORBA::LongLong ll = tbl_[row][col].getLongLong();   
+      if ((ll & 0xFFFFFFFF) == ll) {
+        return (CORBA::Long)(ll & 0xFFFFFFFF);
+      } else {
+        //  value is too big.
+        //  TODO: think about better diagnostics.
+        throw InvalidFieldType();
+      }
+    } else if ( isNotType(col,TypeLong)  &&
+                isNotType(col,TypeULong) &&
+                isNotType(col,TypeInteger) )  {
+       throw InvalidFieldType();
+    } 
     return tbl_[row][col].getLong();
 }
 
@@ -1241,10 +1306,16 @@ RecordSetImpl::setLongAt(CORBA::ULong row, CORBA::ULong col,
                          CORBA::Long v)
 {
     checkCell(row,col); 
-    if ( checkType(col,TypeLong)  &&
-         checkType(col,TypeULong) &&
-         checkType(col,TypeInteger) )  throw InvalidFieldType();
-    tbl_[row][col].setLong(v);
+    if (  isType(col,TypeLongLong) 
+        || isType(col,TypeULongLong)) {
+          tbl_[row][col].setLongLong(v);
+    } else if ( isNotType(col,TypeLong)  &&
+         isNotType(col,TypeULong) &&
+         isNotType(col,TypeInteger) )  {
+      throw InvalidFieldType();
+    } else {
+      tbl_[row][col].setLong(v);
+    }
 }
 
 //
@@ -1255,10 +1326,20 @@ RecordSetImpl::getULongAt(CORBA::ULong row, CORBA::ULong col)
 {
     checkCell(row,col); 
     checkNull(row,col);
-    if ( checkType(col,TypeLong)  &&
-         checkType(col,TypeULong) &&
-         checkType(col,TypeInteger) )  throw InvalidFieldType();
-    return tbl_[row][col].getULong();
+    if ( isType(col,TypeLongLong) ||
+         isType(col,TypeULongLong) ) {
+        if ( tbl_[row][col].getULongLong() < 0xFFFFFFFFUL ) {
+            return tbl_[row][col].getULongLong() & 0xFFFFFFFF;
+        } else {
+           throw InvalidFieldType();
+        }
+    } else if ( isType(col,TypeLong) ||
+         isType(col,TypeULong) ||
+         isType(col,TypeInteger) ) {
+        return tbl_[row][col].getULong();
+    } else {
+         throw InvalidFieldType();
+    }
 }
 
 //
@@ -1269,11 +1350,96 @@ RecordSetImpl::setULongAt(CORBA::ULong row, CORBA::ULong col,
                           CORBA::ULong v)
 {
     checkCell(row,col); 
-    if ( checkType(col,TypeLong)  &&
-         checkType(col,TypeULong) &&
-         checkType(col,TypeInteger) )  throw InvalidFieldType();
-    tbl_[row][col].setULong(v);
+    if ( isType(col,TypeLong)  ||
+         isType(col,TypeULong) ||
+         isType(col,TypeInteger) )  {
+       tbl_[row][col].setULong(v);
+    } else if (isType(col,TypeLongLong) ||
+               isType(col,TypeULongLong) ) {
+       tbl_[row][col].setULongLong(v);
+    } else {
+      throw InvalidFieldType();
+    }
 }
+
+
+
+
+
+//
+// IDL:gradsoft.kiev.ua/UAKGQuery/RecordSet/getLongLongAt:1.0
+//
+CORBA::LongLong
+RecordSetImpl::getLongLongAt(CORBA::ULong row, CORBA::ULong col)
+{
+    checkCell(row,col); 
+    checkNull(row,col);
+    if ( isType(col,TypeLongLong) ||
+         isType(col,TypeULongLong) ) {
+       return tbl_[row][col].getLongLong();
+    } else if (isType(col,TypeLong) ||
+               isType(col,TypeULong) ||
+               isType(col,TypeInteger) ) {
+       return tbl_[row][col].getLong();
+    } else {
+       throw InvalidFieldType();
+    }
+}
+
+
+//
+// IDL:gradsoft.kiev.ua/UAKGQuery/RecordSet/setLongLongAt:1.0
+//
+void
+RecordSetImpl::setLongLongAt(CORBA::ULong row, CORBA::ULong col,
+                         CORBA::LongLong v)
+{
+    checkCell(row,col); 
+    if (   isType(col,TypeLongLong) 
+        || isType(col,TypeULongLong)) {
+      tbl_[row][col].setLongLong(v);
+    } else {
+      throw InvalidFieldType();
+    }
+}
+
+
+//
+// IDL:gradsoft.kiev.ua/UAKGQuery/RecordSet/getLongLongAt:1.0
+//
+CORBA::ULongLong
+RecordSetImpl::getULongLongAt(CORBA::ULong row, CORBA::ULong col)
+{
+    checkCell(row,col); 
+    checkNull(row,col);
+    if ( isType(col,TypeLongLong) ||
+         isType(col,TypeULongLong) ) {
+       return tbl_[row][col].getULongLong();
+    } else if (isType(col,TypeLong) ||
+               isType(col,TypeULong) ||
+               isType(col,TypeInteger) ) {
+       return tbl_[row][col].getULong();
+    } else {
+       throw InvalidFieldType();
+    }
+}
+
+//
+// IDL:gradsoft.kiev.ua/UAKGQuery/RecordSet/setULongLongAt:1.0
+//
+void
+RecordSetImpl::setULongLongAt(CORBA::ULong row, CORBA::ULong col,
+                         CORBA::ULongLong v)
+{
+    checkCell(row,col); 
+    if (   isType(col,TypeLongLong) 
+        || isType(col,TypeULongLong)) {
+      tbl_[row][col].setULongLong(v);
+    } else {
+      throw InvalidFieldType();
+    }
+}
+
 
 //
 // IDL:gradsoft.kiev.ua/UAKGQuery/RecordSet/getFloatAt:1.0
@@ -1283,10 +1449,11 @@ RecordSetImpl::getFloatAt(CORBA::ULong row, CORBA::ULong col)
 {
     checkCell(row,col); 
     checkNull(row,col);
-    if ( checkType(col,TypeFloat) && 
-         checkType(col,TypeReal)  ) throw InvalidFieldType();
+    if ( isNotType(col,TypeFloat) && 
+         isNotType(col,TypeReal)  ) throw InvalidFieldType();
     return tbl_[row][col].getFloat();
 }
+
 
 //
 // IDL:gradsoft.kiev.ua/UAKGQuery/RecordSet/setFloatAt:1.0
@@ -1296,8 +1463,8 @@ RecordSetImpl::setFloatAt(CORBA::ULong row, CORBA::ULong col,
                           CORBA::Float v)
 {
     checkCell(row,col); 
-    if ( checkType(col,TypeFloat) && 
-         checkType(col,TypeReal)  ) throw InvalidFieldType();
+    if ( isNotType(col,TypeFloat) && 
+         isNotType(col,TypeReal)  ) throw InvalidFieldType();
     tbl_[row][col].setFloat(v);
 }
 
@@ -1309,8 +1476,8 @@ RecordSetImpl::getDoubleAt(CORBA::ULong row, CORBA::ULong col)
 {
     checkCell(row,col); 
     checkNull(row,col);
-    if ( checkType(col,TypeDouble) && 
-         checkType(col,TypeDoublePrecision) ) throw InvalidFieldType();
+    if ( isNotType(col,TypeDouble) && 
+         isNotType(col,TypeDoublePrecision) ) throw InvalidFieldType();
     return tbl_[row][col].getDouble();
 }
 
@@ -1322,8 +1489,8 @@ RecordSetImpl::setDoubleAt(CORBA::ULong row, CORBA::ULong col,
                            CORBA::Double v)
 {
     checkCell(row,col); 
-    if ( checkType(col,TypeDouble) &&
-         checkType(col,TypeDoublePrecision) ) throw InvalidFieldType();
+    if ( isNotType(col,TypeDouble) &&
+         isNotType(col,TypeDoublePrecision) ) throw InvalidFieldType();
     tbl_[row][col].setDouble(v);
 }
 
@@ -1335,7 +1502,7 @@ RecordSetImpl::getStringAt(CORBA::ULong row, CORBA::ULong col)
 {
     checkCell(row,col); 
     checkNull(row,col);
-    if ( checkType(col,TypeString) ) throw InvalidFieldType();
+    if ( isNotType(col,TypeString) ) throw InvalidFieldType();
     return tbl_[row][col].getString();
 }
 
@@ -1347,9 +1514,9 @@ RecordSetImpl::setStringAt(CORBA::ULong row, CORBA::ULong col,
                            const char* v)
 {
     checkCell(row,col); 
-    if ( checkType(col,TypeString) ) {
- throw InvalidFieldType();
-}
+    if ( isNotType(col,TypeString) ) {
+      throw InvalidFieldType();
+    }
     if (getFieldSizeAt(col)==0) throw FieldSizeIsNotSet();
     tbl_[row][col].setString(v);
 }
@@ -1362,7 +1529,7 @@ RecordSetImpl::setStringWithSizeAt(CORBA::ULong row, CORBA::ULong col,
                                    const char* v)
 {
     checkCell(row,col); 
-    if ( checkType(col,TypeString) ) throw InvalidFieldType();
+    if ( isNotType(col,TypeString) ) throw InvalidFieldType();
     int vlen=strlen(v);
     if (getFieldSizeAt(col)<vlen) {
         setFieldSizeAt(col,vlen);
@@ -1379,8 +1546,8 @@ RecordSetImpl::getNumericAt(CORBA::ULong row, CORBA::ULong col)
 {
     checkCell(row,col);
     checkNull(row,col);
-    if ( checkType(col,TypeNumeric) &&
-         checkType(col,TypeDecimal) ) throw InvalidFieldType();
+    if ( isNotType(col,TypeNumeric) &&
+         isNotType(col,TypeDecimal) ) throw InvalidFieldType();
     return tbl_[row][col].getNumeric();
 }
 
@@ -1392,8 +1559,8 @@ RecordSetImpl::setNumericAt(CORBA::ULong row, CORBA::ULong col,
                             Numeric* v)
 {
     checkCell(row,col);
-    if ( checkType(col,TypeNumeric) &&
-         checkType(col,TypeDecimal) ) throw InvalidFieldType();
+    if ( isNotType(col,TypeNumeric) &&
+         isNotType(col,TypeDecimal) ) throw InvalidFieldType();
     tbl_[row][col].setNumeric(v);
 }
 
@@ -1405,7 +1572,7 @@ RecordSetImpl::getDateTimeAt(CORBA::ULong row, CORBA::ULong col)
 {
     checkCell(row,col);
     checkNull(row,col);
-    if ( checkType(col,TypeDateTime) ) throw InvalidFieldType();
+    if ( isNotType(col,TypeDateTime) ) throw InvalidFieldType();
     return tbl_[row][col].getDateTime();
 }
 
@@ -1417,7 +1584,7 @@ RecordSetImpl::setDateTimeAt(CORBA::ULong row, CORBA::ULong col,
                              const DateTime& v)
 {
     checkCell(row,col);
-    if ( checkType(col,TypeDateTime) ) throw InvalidFieldType();
+    if ( isNotType(col,TypeDateTime) ) throw InvalidFieldType();
     tbl_[row][col].setDateTime(v);
 }
 
@@ -1429,7 +1596,7 @@ RecordSetImpl::getRawAt(CORBA::ULong row, CORBA::ULong col)
 {
     checkCell(row,col);
     checkNull(row,col);
-    if ( checkType(col,TypeRaw) ) throw InvalidFieldType();
+    if ( isNotType(col,TypeRaw) ) throw InvalidFieldType();
     return tbl_[row][col].getRaw();
 }
 
@@ -1441,7 +1608,7 @@ RecordSetImpl::setRawAt(CORBA::ULong row, CORBA::ULong col,
                         const OctSeq& v)
 {
     checkCell(row,col);
-    if ( checkType(col,TypeRaw) ) throw InvalidFieldType();
+    if ( isNotType(col,TypeRaw) ) throw InvalidFieldType();
     tbl_[row][col].setRaw(v);
 }
 
@@ -1453,7 +1620,7 @@ RecordSetImpl::passRawAt(CORBA::ULong row, CORBA::ULong col,
                         OctSeq& v)
 {
     checkCell(row,col);
-    if ( checkType(col,TypeRaw) ) throw InvalidFieldType();
+    if ( isNotType(col,TypeRaw) ) throw InvalidFieldType();
     tbl_[row][col].passRaw(v);
 }
 
@@ -1465,7 +1632,7 @@ RecordSetImpl::getWStringAt(CORBA::ULong row, CORBA::ULong col)
 {
     checkCell(row,col);
     checkNull(row,col);
-    if ( checkType(col,TypeWString) ) throw InvalidFieldType();
+    if ( isNotType(col,TypeWString) ) throw InvalidFieldType();
     return tbl_[row][col].getWString();
 }
 
@@ -1477,7 +1644,7 @@ RecordSetImpl::setWStringAt(CORBA::ULong row, CORBA::ULong col,
                             const CORBA::WChar* v)
 {
     checkCell(row,col);
-    if ( checkType(col,TypeWString) ) throw InvalidFieldType();
+    if ( isNotType(col,TypeWString) ) throw InvalidFieldType();
     if ( getFieldSizeAt(col)==0) throw FieldSizeIsNotSet();
     tbl_[row][col].setWString(v);
 }
@@ -1491,7 +1658,7 @@ RecordSetImpl::setWStringWithSizeAt(CORBA::ULong row,
                                     const CORBA::WChar* v)
 {
     checkCell(row,col);
-    if ( checkType(col,TypeWString) ) throw InvalidFieldType();
+    if ( isNotType(col,TypeWString) ) throw InvalidFieldType();
     unsigned long vlen=wcslen(v);
     if ( getFieldSizeAt(col)<vlen) setFieldSizeAt(col,vlen+sizeof(CORBA::WChar));
     tbl_[row][col].setWString(v);
@@ -1507,7 +1674,7 @@ RecordSetImpl::getBlobAt(CORBA::ULong row, CORBA::ULong col)
 {
     checkCell(row,col);
     checkNull(row,col);
-    if ( checkType(col,TypeBlob) ) throw InvalidFieldType();
+    if ( isNotType(col,TypeBlob) ) throw InvalidFieldType();
     return tbl_[row][col].getBlob();
 }
 
@@ -1519,7 +1686,7 @@ RecordSetImpl::setBlobAt(CORBA::ULong row, CORBA::ULong col,
                          Blob_ptr v)
 {
     checkCell(row,col);
-    if ( checkType(col,TypeBlob) ) throw InvalidFieldType();
+    if ( isNotType(col,TypeBlob) ) throw InvalidFieldType();
     tbl_[row][col].setBlob(v);
 }
 
@@ -1531,7 +1698,7 @@ RecordSetImpl::getClobAt(CORBA::ULong row, CORBA::ULong col)
 {
     checkCell(row,col);
     checkNull(row,col);
-    if ( checkType(col,TypeClob) ) throw InvalidFieldType();
+    if ( isNotType(col,TypeClob) ) throw InvalidFieldType();
     return tbl_[row][col].getClob();
 }
 
@@ -1544,7 +1711,7 @@ RecordSetImpl::setClobAt(CORBA::ULong row,
                                      Clob_ptr v)
 {
     checkCell(row,col);
-    if ( checkType(col,TypeClob) ) throw InvalidFieldType();
+    if ( isNotType(col,TypeClob) ) throw InvalidFieldType();
     tbl_[row][col].setClob(v);
 }
 
@@ -1556,7 +1723,7 @@ RecordSetImpl::getWclobAt(CORBA::ULong row, CORBA::ULong col)
 {
     checkCell(row,col);
     checkNull(row,col);
-    if ( checkType(col,TypeWclob) ) throw InvalidFieldType();
+    if ( isNotType(col,TypeWclob) ) throw InvalidFieldType();
     return tbl_[row][col].getWclob();
 }
 
@@ -1568,7 +1735,7 @@ RecordSetImpl::setWclobAt(CORBA::ULong row, CORBA::ULong col,
                           Wclob_ptr v)
 {
     checkCell(row,col);
-    if ( checkType(col,TypeWclob) ) throw InvalidFieldType();
+    if ( isNotType(col,TypeWclob) ) throw InvalidFieldType();
     tbl_[row][col].setWclob(v);
 }
 
@@ -1606,6 +1773,12 @@ RecordSetImpl::getAsStringAt(CORBA::ULong row, CORBA::ULong col,
     break;
       case TypeULong:
     ostr << f.getULong();
+    break;
+      case TypeLongLong:
+    ostr << f.getLongLong();
+    break;
+      case TypeULongLong:
+    ostr << f.getULongLong();
     break;
       case TypeFloat:
     ostr << f.getFloat();
@@ -1801,6 +1974,12 @@ void RecordSetImpl::getField(UAKGQuery2::RecordSet* rs,
       case TypeULong:
             fld.setULong(rs->getULongAt(row,col));
             break;
+      case TypeLongLong:
+            fld.setLongLong(rs->getLongLongAt(row,col));
+            break;
+      case TypeULongLong:
+            fld.setULongLong(rs->getULongLongAt(row,col));
+            break;
       case TypeFloat:
       case TypeReal:
             fld.setFloat(rs->getFloatAt(row,col));
@@ -1896,6 +2075,12 @@ void RecordSetImpl::setField( CORBA::ULong row, CORBA::ULong col, const Field& f
             break;
       case TypeULong:
             setULongAt(row,col,ft.getULong());
+            break;
+      case TypeLongLong:
+            setLongLongAt(row,col,ft.getLongLong());
+            break;
+      case TypeULongLong:
+            setULongLongAt(row,col,ft.getULongLong());
             break;
       case TypeFloat:
       case TypeReal:

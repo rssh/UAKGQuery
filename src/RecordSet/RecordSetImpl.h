@@ -66,6 +66,8 @@ class Field
         UAKGQuery2::Blob_ptr bl;
         UAKGQuery2::Clob_ptr cl;
         UAKGQuery2::Wclob_ptr wcl;
+        CORBA::LongLong ll;
+        CORBA::ULongLong ull;
     } value_;
 
     void setType(UAKGQuery2::FieldType type) { type_ = type; }
@@ -106,6 +108,12 @@ public:
 
     CORBA::ULong getULong() const
     { return value_.ul; }
+
+    CORBA::LongLong getLongLong() const
+    { return value_.ll; }
+
+    CORBA::ULongLong getULongLong() const
+    { return value_.ull; }
 
     CORBA::Float getFloat() const
     { return value_.f; }
@@ -221,6 +229,13 @@ public:
 
     void setDouble(const CORBA::Double v)
     { destroy(); setType(TypeDouble); value_.d = v; }
+
+    void setLongLong(const CORBA::LongLong v)
+    { destroy(); setType(TypeLongLong); value_.ll = v; }
+    
+    void setULongLong(const CORBA::ULongLong v)
+    { destroy(); setType(TypeULongLong); value_.ull = v; }
+
 
     //
     // Memory managment. Release in deconstructor.
@@ -386,11 +401,18 @@ class RecordSetImpl : virtual public OBV_UAKGQuery2::RecordSet,
     }
     }
 
-    CORBA::Boolean checkType(CORBA::ULong col, 
+    inline CORBA::Boolean isNotType(CORBA::ULong col, 
                  UAKGQuery2::FieldType ftype) const
     {
         return (ct_[col] != ftype);
     }
+
+    inline CORBA::Boolean isType(CORBA::ULong col, 
+                 UAKGQuery2::FieldType ftype) const
+    {
+        return (ct_[col] == ftype);
+    }
+
 
     void setField( CORBA::ULong row, CORBA::ULong col, const Field& ft );
     void getField(UAKGQuery2::RecordSet* rs,CORBA::ULong row, CORBA::ULong col, Field& fld);
@@ -531,6 +553,21 @@ public:
     virtual void setULongAt(CORBA::ULong row,
                             CORBA::ULong col,
                             CORBA::ULong v);
+
+    virtual CORBA::LongLong getLongLongAt(CORBA::ULong row,
+                                          CORBA::ULong col);
+
+    virtual void setLongLongAt(CORBA::ULong row,
+                            CORBA::ULong col,
+                            CORBA::LongLong v);
+
+    virtual CORBA::ULongLong getULongLongAt(CORBA::ULong row,
+                                            CORBA::ULong col);
+
+    virtual void setULongLongAt(CORBA::ULong row,
+                            CORBA::ULong col,
+                            CORBA::ULongLong v);
+
 
     virtual CORBA::Float getFloatAt(CORBA::ULong row,
                                     CORBA::ULong col);

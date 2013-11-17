@@ -126,7 +126,11 @@ module UAKGQuery2
         ///
         TypeClob,
         ///
-        TypeWclob
+        TypeWclob,
+        ///
+        TypeLongLong,
+        ///
+        TypeULongLong
     };
 
     valuetype Numeric {
@@ -576,6 +580,30 @@ module UAKGQuery2
                         in unsigned long col,
                         in Wclob v) raises (InvalidRow, InvalidColumn
                                                      , InvalidFieldType);
+
+
+        long long getLongLongAt(in unsigned long row, in unsigned long col) 
+                                             raises (InvalidRow, InvalidColumn
+                                                     , FieldIsNull
+                                                     , InvalidFieldType);
+
+        void setLongLongAt(in unsigned long row, 
+                        in unsigned long col,
+                        in long long v) raises (InvalidRow, InvalidColumn
+                                                     , InvalidFieldType);
+
+
+        unsigned long long getULongLongAt(in unsigned long row, in unsigned long col) 
+                                             raises (InvalidRow, InvalidColumn
+                                                     , FieldIsNull
+                                                     , InvalidFieldType);
+
+
+        void setULongLongAt(in unsigned long row, 
+                        in unsigned long col,
+                        in unsigned long long v) raises (InvalidRow, InvalidColumn
+                                                     , InvalidFieldType);
+
 
         /**
          * get value as string (in locale-specific encoding)
