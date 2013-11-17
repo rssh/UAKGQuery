@@ -2157,7 +2157,7 @@ void RecordSetFactoryImpl::lazyInitLocale()
 {
  locale=setlocale(LC_ALL,"");
  if (locale==NULL) {
-   std::cerr << "error, can't init locale." << std::endl;
+   std::cerr << "warning, can't init locale" << std::endl;
  }
 }
 
