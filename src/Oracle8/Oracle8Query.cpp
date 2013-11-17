@@ -696,10 +696,15 @@ FieldType Oracle8Query::internalDType2valueType
                     dlen = sizeof(CORBA::Short); 
                     return TypeShort;
                 }
-                if (precision < 11) 
+                if (precision < 10) 
                 { 
                     dlen = sizeof(CORBA::Long); 
                     return TypeLong;
+                }
+                if (precision < 18) 
+                {
+                    dlen = sizeof(CORBA::LongLong); 
+                    return TypeLongLong;
                 }
             }
             else
@@ -787,6 +792,8 @@ ub2   Oracle8Query::valueType2externalDType(FieldType vt)
     case TypeUShort:
     case TypeLong:
     case TypeULong:
+    case TypeLongLong:
+    case TypeULongLong:
           return SQLT_INT;
     case TypeFloat:
     case TypeDouble:
@@ -860,6 +867,9 @@ Oracle8Query::getFieldSize(UAKGQuery2::RecordSet* rs, CORBA::ULong col)
       case TypeInteger:
       case TypeULong:
             return sizeof(CORBA::Long);
+      case TypeLongLong:
+      case TypeULongLong:
+            return sizeof(CORBA::LongLong);
       case TypeFloat:
       case TypeReal:
             return sizeof(CORBA::Float);
@@ -902,6 +912,9 @@ CORBA::ULong Oracle8Query::correctFieldSizeForBind(ub2 externalIdType,
                 case TypeLong:
                 case TypeULong:
                            return 4;
+                case TypeLongLong:
+                case TypeULongLong:
+                           return 8;
                 default:
                        if (getDebugLevel() > 5) {
                           getLogger().warnings() << "[" <<  __FILE__ << ":" << __LINE__ << "] ";

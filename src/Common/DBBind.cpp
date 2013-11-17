@@ -68,10 +68,10 @@ DBBindDescription::getFieldDescription(const char* name)
     type = recordSet_->getFieldTypeAt(index);
 
     if ( recordSet_->haveFieldSizeAt(index) ) {
-    size = recordSet_->getFieldSizeAt(index);
+        size = recordSet_->getFieldSizeAt(index);
     }
     if ( recordSet_->haveNumericFieldPropertiesAt(index) ) {
-    precision = recordSet_->getNumericPrecisionAt(index);
+        precision = recordSet_->getNumericPrecisionAt(index);
         scale = recordSet_-> getNumericScaleAt(index); 
     }
     if  ( type == UAKGQuery2::TypeDateTime ) size = sizeof(DateTime);
@@ -91,7 +91,7 @@ DBBindDescription::appendFieldDescription(UAKGQuery2::FieldDescription& fd)
     if ( recordSet_->haveFieldSizeAt( nextColumn ) )
         recordSet_->setFieldSizeAt(nextColumn , fd.size);
     if ( recordSet_->haveNumericFieldPropertiesAt( nextColumn ) ) 
-    recordSet_->setNumericFieldPropertiesAt( nextColumn,
+       recordSet_->setNumericFieldPropertiesAt( nextColumn,
                            fd.precision,
                            fd.scale
                          );
@@ -214,6 +214,12 @@ void  DBBindSet::setField(CORBA::ULong row,CORBA::ULong col,
             break;
        case TypeULong:
             setULong(row,col,ft.getULong());
+            break;
+       case TypeLongLong:
+            setLongLong(row,col,ft.getLongLong());
+            break;
+       case TypeULongLong:
+            setULongLong(row,col,ft.getULongLong());
             break;
        case TypeFloat:
             setFloat(row,col,ft.getFloat());
@@ -371,6 +377,12 @@ void  DBBindSet::getField(CORBA::ULong row,CORBA::ULong col, Field& ft
             break;
         case TypeULong:
             ft.setULong(getULong(row,col));
+            break;
+        case TypeLongLong:
+            ft.setLongLong(getLongLong(row,col));
+            break;
+        case TypeULongLong:
+            ft.setULongLong(getLongLong(row,col));
             break;
         case TypeFloat:
             ft.setFloat(getFloat(row,col));
@@ -734,6 +746,9 @@ CORBA::UShort  DBBindSet::getDefaultLengthOfField(CORBA::ULong col)
       case TypeULong:
       case TypeInteger:
           return sizeof(CORBA::ULong);
+      case TypeLongLong:
+      case TypeULongLong:
+          return sizeof(CORBA::ULongLong);
       case TypeFloat:
       case TypeReal:
           return sizeof(CORBA::Float);

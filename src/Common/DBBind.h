@@ -323,6 +323,32 @@ protected:
     return *((CORBA::Long*)(getMemPtr(row,col,sizeof(CORBA::Long))));
   }
 
+
+  void  setLongLong(CORBA::ULong row, CORBA::ULong col, CORBA::LongLong value)
+  {
+   dbBindDescription_.checkType(col,UAKGQuery2::TypeLongLong);
+    *((CORBA::LongLong*)(getMemPtr(row,col,sizeof(CORBA::LongLong))))=value;
+    flens_[col][row]=sizeof(CORBA::LongLong);
+  }
+
+  void  setLongLong_(CORBA::ULong row, CORBA::ULong col, CORBA::Long value)
+  {
+    *((CORBA::LongLong*)(getMemPtr(row,col,sizeof(CORBA::LongLong))))=value;
+    flens_[col][row]=sizeof(CORBA::LongLong);
+  }
+
+  CORBA::LongLong  getLongLong(CORBA::ULong row, CORBA::ULong col)
+  {
+    dbBindDescription_.checkType(col,UAKGQuery2::TypeLongLong);
+    return *((CORBA::LongLong*)(getMemPtr(row,col,sizeof(CORBA::LongLong))));
+  }
+ 
+  CORBA::LongLong  getLongLong_(CORBA::ULong row, CORBA::ULong col)
+  {
+    return *((CORBA::LongLong*)(getMemPtr(row,col,sizeof(CORBA::LongLong))));
+  }
+
+
   void  setULong(CORBA::ULong row, CORBA::ULong col, CORBA::ULong value)
   {
     dbBindDescription_.checkType(col,UAKGQuery2::TypeULong);
@@ -334,6 +360,20 @@ protected:
   {
     dbBindDescription_.checkType(col,UAKGQuery2::TypeULong);
     return *((CORBA::ULong*)(getMemPtr(row,col,sizeof(CORBA::ULong))));
+  }
+
+
+  void  setULongLong(CORBA::ULong row, CORBA::ULong col, CORBA::ULongLong value)
+  {
+    dbBindDescription_.checkType(col,UAKGQuery2::TypeULongLong);
+    *((CORBA::ULongLong*)(getMemPtr(row,col,sizeof(CORBA::ULongLong))))=value;
+    flens_[col][row]=sizeof(CORBA::ULongLong);
+  }
+
+  CORBA::ULongLong  getULongLong(CORBA::ULong row, CORBA::ULong col)
+  {
+    dbBindDescription_.checkType(col,UAKGQuery2::TypeULongLong);
+    return *((CORBA::ULongLong*)(getMemPtr(row,col,sizeof(CORBA::ULongLong))));
   }
 
 
